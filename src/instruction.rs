@@ -1,48 +1,50 @@
+use crate::symbol::{Rs, Rd, IW, IL, K, F};
+
 enum Instruction {
     // Arithmetic/Logical/Comparison
-    Abs(u8),            // Rd
-    Add(u8, u8),        // Rs, Rd
-    Addc(u8, u8),       // Rs, Rd
-    Addiw(u16, u8),     // IW, Rd
-    Addil(u32, u8),     // IL, Rd
-    Addk(u8, u8),       // K, Rd
-    Addxy(u8, u8),      // Rs, Rd
-    And(u8, u8),        // Rs, Rd
-    Andi(u32, u8),      // IL, Rd
-    Andn(u8, u8),       // Rs, Rd
-    Andni(u32, u8),     // IL, Rd
-    Btstk(u8, u8),      // K, Rd
-    Btst(u8, u8),       // Rs, Rd
-    Clr(u8),            // Rd
+    Abs(Rd),
+    Add(Rs, Rd),
+    Addc(Rs, Rd),
+    Addiw(IW, Rd),
+    Addil(IL, Rd),
+    Addk(K, Rd),
+    Addxy(Rs, Rd),
+    And(Rs, Rd),
+    Andi(IL, Rd),
+    Andn(Rs, Rd),
+    Andni(IL, Rd),
+    Btstk(K, Rd),
+    Btst(Rs, Rd),
+    Clr(Rd),
     Clrc,
-    Cmp(u8, u8),        // Rs, Rd
-    Cmpiw(u16, u8),     // IW, Rd 
-    Cmpil(u32, u8),     // IL, Rd
-    Cmpxy(u8, u8),      // Rs, Rd
-    Dec(u8),            // Rd
-    Divs(u8, u8),       // Rs, Rd
-    Divu(u8, u8),       // Rs, Rd
-    Lmo(u8, u8),        // Rs, Rd
-    Mods(u8, u8),       // Rs, Rd
-    Modu(u8, u8),       // Rs, Rd
-    Mpys(u8, u8),       // Rs, Rd
-    Mpyu(u8, u8),       // Rs, Rd
-    Neg(u8),            // Rd
-    Negb(u8),           // Rd
-    Not(u8),            // Rd
-    Or(u8, u8),         // Rs, Rd
-    Ori(u32, u8),       // IL, Rd
+    Cmp(Rs, Rd),
+    Cmpiw(IW, Rd),
+    Cmpil(IL, Rd),
+    Cmpxy(Rs, Rd),
+    Dec(Rd),      
+    Divs(Rs, Rd),
+    Divu(Rs, Rd),
+    Lmo(Rs, Rd),
+    Mods(Rs, Rd),
+    Modu(Rs, Rd),
+    Mpys(Rs, Rd),
+    Mpyu(Rs, Rd),
+    Neg(Rd),
+    Negb(Rd),
+    Not(Rd),
+    Or(Rs, Rd),
+    Ori(IL, Rd),
     Setc,
-    Sext(u8, u8),       // Rd, F
-    Sub(u8, u8),        // Rs, Rd
-    Subb(u8, u8),       // Rs, Rd
-    Subiw(u16, u8),     // IW, Rd
-    Subil(u32, u8),     // IL, Rd
-    Subk(u8, u8),       // K, Rd
-    Subxy(u8, u8),      // Rs, Rd
-    Xor(u8, u8),        // Rs, Rd
-    Xori(u32, u8),      // IL, Rd
-    Zext(u8, u8),       // Rd, F
+    Sext(Rd, F),
+    Sub(Rs, Rd),
+    Subb(Rs, Rd),
+    Subiw(IW, Rd),
+    Subil(IL, Rd),
+    Subk(K, Rd),
+    Subxy(Rs, Rd),
+    Xor(Rs, Rd),
+    Xori(IL, Rd),
+    Zext(Rd, F),
     // Move
     // Graphics
     // Control
