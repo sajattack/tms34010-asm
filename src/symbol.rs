@@ -1,27 +1,27 @@
 #[derive(Debug, Clone, Copy)]
-pub struct Rs(u8);
+pub struct Rs(pub u8);
 #[derive(Debug, Clone, Copy)]
-pub struct Rd(u8);
+pub struct Rd(pub u8);
 #[derive(Debug, Clone, Copy)]
-pub struct IW(u16);
+pub struct IW(pub u16);
 #[derive(Debug, Clone, Copy)]
-pub struct IL(u32);
+pub struct IL(pub u32);
 #[derive(Debug, Clone, Copy)]
-pub struct K(u8);
+pub struct K(pub u8);
 #[derive(Debug, Clone, Copy)]
-pub struct F(u8);
+pub struct F(pub u8);
 #[derive(Debug, Clone, Copy)]
-pub struct Address(u32); // 32-bit specified in assembly code, turned into 8-bit offset from current PC
+pub struct Address(pub u32); // 32-bit specified in assembly code, turned into 8-bit offset from current PC
 #[derive(Debug, Clone, Copy)]
-pub struct FS(u8);
+pub struct FS(pub u8);
 #[derive(Debug, Clone, Copy)]
-pub struct FE(u8);
+pub struct FE(pub u8);
 #[derive(Debug, Clone, Copy)]
-pub struct N(u8);
+pub struct N(pub u8);
 #[derive(Debug, Clone, Copy)]
-pub struct Offset(u8);
+pub struct Offset(pub u8);
 #[derive(Debug, Clone, Copy)]
-pub struct Z(u8);
+pub struct Z(pub u8);
 #[derive(Debug, Clone, Copy)]
-pub struct Condition(u8);
+pub struct Condition(pub u8);
 

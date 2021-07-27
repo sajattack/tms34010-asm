@@ -107,6 +107,7 @@ pub enum Instruction {
     Exgf(Rd, F),
     Exgpc(Rd),
     Getpc(Rd),
+    Getst(Rd),
     Nop,
     Popst,
     Pushst,
