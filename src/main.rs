@@ -1,6 +1,6 @@
-use std::fs::File;
+/*use std::fs::File;
 use std::io::prelude::*;
-use std::io::SeekFrom;
+use std::io::SeekFrom;*/
 
 pub mod instruction;
 pub mod symbol;
@@ -34,6 +34,14 @@ fn main() {
             0x60, 0x03,
             // ABS A2
             0x82,  0x03,
+            // SETF 0x10, 0, 0
+            0x50, 0x05,
+            // ADDI 0x1000, A1
+            0x01, 0x0b, 0x00, 0x01,
+            // ADDI 0x5555AAAA, A2
+            0x22, 0x0b, 0xAA, 0xAA, 0x55, 0x55,
+            // ADDI 0x1000_0000, A1
+            0x21, 0x0b, 0x00, 0x00, 0x00, 0x01,
             // XOR B10, B7
             0x57, 0x57,
             // CLR B9
@@ -41,8 +49,8 @@ fn main() {
     ]));
 
     /*let mut file = File::open("/home/paul/Downloads/gspa-dos/tutor_c.out").unwrap();
-    file.seek(SeekFrom::Start(0xf04));
+    file.seek(SeekFrom::Start(0x146)).unwrap();
     let mut bytes = vec![0u8; 100];
-    file.read(&mut bytes);
+    file.read(&mut bytes).unwrap();
     println!("{:?}", disasm::disassemble_stage1(&bytes));*/
 }

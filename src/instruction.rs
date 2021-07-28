@@ -1,4 +1,4 @@
-use crate::symbol::{Rs, Rd, IW, IL, K, F, Address, FS, FE, N, Offset, Z, Condition};
+use crate::symbol::{Rs, Rd, IW, IL, K, F, Address, FS, FE, N, Offset8, Offset16, Z, Condition};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Instruction {
@@ -50,9 +50,9 @@ pub enum Instruction {
     MovbRegToIndirect(Rs, Rd),
     MovbIndirectToReg(Rs, Rd),
     MovbIndirectToIndirect(Rs, Rd),
-    MovbRegToIndirectOffset(Rs, Rd, Offset),
-    MovbIndirectToRegOffset(Rs, Rd, Offset),
-    MovbIndirectToIndirectOffset(Rs, Rd, Offset),
+    MovbRegToIndirectOffset(Rs, Rd, Offset8),
+    MovbIndirectToRegOffset(Rs, Rd, Offset8),
+    MovbIndirectToIndirectOffset(Rs, Rd, Offset8),
     MovbRegToAbsolute(Rs, Address),
     MovbAbsoluteToReg(Address, Rd),
     MovbAbsoluteToAbsolute(Address, Address),
@@ -66,10 +66,10 @@ pub enum Instruction {
     MoveFieldIndirectToIndirect(Rs, Rd, Option<F>),
     MoveFieldIndirectToIndirectPredec(Rs, Rd, Option<F>),
     MoveFieldIndirectToIndirectPostinc(Rs, Rd, Option<F>),
-    MoveFieldRegToIndirectOffset(Rs, Rd, Option<F>, Offset),
-    MoveFieldIndirectToRegOffset(Rs, Rd, Option<F>, Offset),
-    MoveFieldIndirectToIndirectOffsetPostinc(Rs, Rd, Option<F>, Offset),
-    MoveFieldIndirectToIndirectOffset(Rs, Rd, Option<F>, Offset, Offset),
+    MoveFieldRegToIndirectOffset(Rs, Rd, Option<F>, Offset8),
+    MoveFieldIndirectToRegOffset(Rs, Rd, Option<F>, Offset8),
+    MoveFieldIndirectToIndirectOffsetPostinc(Rs, Rd, Option<F>, Offset8),
+    MoveFieldIndirectToIndirectOffset(Rs, Rd, Option<F>, Offset8, Offset8),
     MoveFieldRegToAbsolute(Rs, Address, Option<F>),
     MoveFieldAbsoluteToReg(Address, Rd, Option<F>),
     MoveFieldAbsoluteToIndirectPostinc(Address, Rd, Option<F>),
@@ -100,7 +100,7 @@ pub enum Instruction {
     // Control
     Call(Rs),
     Calla(Address),
-    Callr(Address),
+    Callr(Offset16),
     Dint,
     Eint,
     Emu,
@@ -118,13 +118,13 @@ pub enum Instruction {
     Setf(FS, FE, F),
     Trap(N),
     // Jump
-    Dsj(Rd, Address),
-    Dsjeq(Rd, Address),
-    Dsjne(Rd, Address),
-    Dsjs(Rd, Address),
-    Ja(Condition, Address),
-    Jr(Condition, Address),
-    Jrs(Condition, Address),
+    Dsj(Rd, Offset16),
+    Dsjeq(Rd, Offset16),
+    Dsjne(Rd, Offset16),
+    Dsjs(Rd, Offset16),
+    Ja(Condition, Offset16),
+    Jr(Condition, Offset16),
+    Jrs(Condition, Offset16),
     Jump(Rs),
     // Shift
     Rlk(K, Rd),
