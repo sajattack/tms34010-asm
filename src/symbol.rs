@@ -26,4 +26,5 @@ pub struct Offset16(pub u16);
 pub struct Z(pub u8);
 #[derive(Debug, Clone, Copy)]
 pub struct Condition(pub u8);
-
+#[derive(Debug, Clone, Copy)]
+pub struct D(pub bool);

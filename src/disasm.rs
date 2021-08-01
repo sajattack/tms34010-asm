@@ -3,7 +3,7 @@ use bitvec::prelude::*;
 use crate::instruction::Instruction;
 
 #[allow(unused)]
-use crate::symbol::{Rs, Rd, IW, IL, K, F, Address, FS, FE, N, Offset8, Offset16, Z, Condition};
+use crate::symbol::{Rs, Rd, IW, IL, K, F, D, Address, FS, FE, N, Offset8, Offset16, Z, Condition};
 
 pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
     let mut inst_vec = vec![];
@@ -21,6 +21,8 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                 let fs = word.get(0..=4).unwrap().load::<u8>();
                 let n = word.get(0..=4).unwrap().load::<u8>();
                 let fe = *word.get(5).unwrap();
+                let k = word.get(5..=9).unwrap().load::<u8>();
+                let d = *word.get(10).unwrap();
                 match upper7 {
                     0b0000000 => {
                         match subop {
@@ -219,7 +221,106 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                             },
                             _ => {}
                         }
-                    }
+                    },
+                    0b0000111 => {
+                        match subop {
+                            8 => {
+                                inst_vec.push(Instruction::Pixbltll);
+                            },
+                            9 => {
+                                inst_vec.push(Instruction::Pixbltlxy);
+                            },
+                            10 => {
+                                inst_vec.push(Instruction::Pixbltxyl);
+                            },
+                            11 => {
+                                inst_vec.push(Instruction::Pixbltxyxy);
+                            },
+                            12 => {
+                                inst_vec.push(Instruction::Pixbltbl);
+                            },
+                            13 => {
+                                inst_vec.push(Instruction::Pixbltbxy);
+                            },
+                            14 => {
+                                inst_vec.push(Instruction::Filll);
+                            },
+                            15 => {
+                                inst_vec.push(Instruction::Fillxy);
+                            },
+                            _ => {},
+                        }
+                    },
+                    0b0001000 | 0b0001001 => {
+                        if k == 1 {
+                            inst_vec.push(Instruction::Inc(Rd((rf as u8) << 4 | rd)));
+                        }
+                        else {
+                            inst_vec.push(Instruction::Addk(K(k), Rd((rf as u8) << 4 | rd)));
+                        }
+                    },
+                    0b0001010 | 0b0001011 => {
+                        if k == 1 {
+                            inst_vec.push(Instruction::Dec(Rd((rf as u8) << 4 | rd)));
+                        }
+                        else {
+                            inst_vec.push(Instruction::Subk(K(k), Rd((rf as u8) << 4 | rd)));
+                        }
+                    },
+                    0b0001100 | 0b0001101 => {
+                        inst_vec.push(Instruction::Movk(K(k), Rd((rf as u8) << 4 | rd))); 
+                    },
+                    0b0001110 | 0b0001111 => {
+                        //todo!("BTSTK - don't feel like dealing with 1's complement right now");       
+                    },
+                    0b0010000 | 0b0010001 => {
+                        inst_vec.push(Instruction::Slak(K(k), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0010010 | 0b0010011 => {
+                        inst_vec.push(Instruction::Sllk(K(k), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0010100 | 0b0010101 => {
+                        //todo!(SRAK - don't feel like dealing with 2's complement right now");
+                    },
+                    0b0010110 | 0b0010111 => {
+                        //todo!(SRLK - don't feel like dealing with 2's complement right now");
+                    },
+                    0b0011000 | 0b0011001 => {
+                        inst_vec.push(Instruction::Rlk(K(k), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0011100..=0b0011111 => {
+                        inst_vec.push(Instruction::Dsjs(D(d), Rd((rf as u8) << 4 | rd), K(k))); 
+                    },
+                    0b0100000 => {
+                        inst_vec.push(Instruction::Add(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0100001 => {
+                        inst_vec.push(Instruction::Addc(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0100010 => {
+                        inst_vec.push(Instruction::Sub(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0100011 => {
+                        inst_vec.push(Instruction::Subb(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0100100 => {
+                        inst_vec.push(Instruction::Cmp(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0100101 => {
+                        inst_vec.push(Instruction::Btst(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0100110 | 0b0100111 => {
+                         //todo!("move instruction I don't want to deal with right now")
+                    },
+                    0b0101000 => {
+                        inst_vec.push(Instruction::And(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0101001 => {
+                        inst_vec.push(Instruction::Andn(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0101010 => {
+                        inst_vec.push(Instruction::Or(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
                     0b0101011 => {
                         if rs == rd {
                             inst_vec.push(Instruction::Clr(Rd((rf as u8) << 4 | rd)));
@@ -227,6 +328,39 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                         else {
                             inst_vec.push(Instruction::Xor(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
                         }
+                    },
+                    0b0101100 => {
+                        inst_vec.push(Instruction::Divs(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0101101 => {
+                        inst_vec.push(Instruction::Divu(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0101110 => {
+                        inst_vec.push(Instruction::Mpys(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0101111 => {
+                        inst_vec.push(Instruction::Mpyu(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0110001 => {
+                        inst_vec.push(Instruction::Sll(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0110010 => {
+                        inst_vec.push(Instruction::Sra(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0110011 => {
+                        inst_vec.push(Instruction::Srl(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0110100 => {
+                        inst_vec.push(Instruction::Rl(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0110101 => {
+                        inst_vec.push(Instruction::Lmo(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0110110 => {
+                        inst_vec.push(Instruction::Mods(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b0110111 => {
+                        inst_vec.push(Instruction::Modu(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
                     },
                     _ => {}
                 }

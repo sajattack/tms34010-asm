@@ -1,4 +1,4 @@
-use crate::symbol::{Rs, Rd, IW, IL, K, F, Address, FS, FE, N, Offset8, Offset16, Z, Condition};
+use crate::symbol::{Rs, Rd, IW, IL, K, F, D, Address, FS, FE, N, Offset8, Offset16, Z, Condition};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Instruction {
@@ -25,6 +25,7 @@ pub enum Instruction {
     Dec(Rd),      
     Divs(Rs, Rd),
     Divu(Rs, Rd),
+    Inc(Rd),
     Lmo(Rs, Rd),
     Mods(Rs, Rd),
     Modu(Rs, Rd),
@@ -89,6 +90,7 @@ pub enum Instruction {
     Pixbltbl,
     Pixbltbxy,
     Pixbltll,
+    Pixbltlxy,
     Pixbltxyl,
     Pixbltxyxy,
     PixtRegToIndirect(Rs, Rd),
@@ -121,7 +123,8 @@ pub enum Instruction {
     Dsj(Rd, Offset16),
     Dsjeq(Rd, Offset16),
     Dsjne(Rd, Offset16),
-    Dsjs(Rd, Offset16),
+    Dsjs(D, Rd, K), // the manual calls this offset rather than K but it's in the position of K and 5 bits long 
+                    // it's also in with other K instructions
     Ja(Condition, Offset16),
     Jr(Condition, Offset16),
     Jrs(Condition, Offset16),
