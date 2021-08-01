@@ -8,3 +8,6 @@ edition = "2018"
 
 [dependencies]
 bitvec = "0.22"
+
+#[profile.release]
+#lto = "fat"

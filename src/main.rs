@@ -2,12 +2,13 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::SeekFrom;
 
-pub mod instruction;
+mod instruction;
 mod symbol;
-pub mod disasm;
+mod disasm;
 
-fn main() {
-    /*println!("{:?}", disasm::disassemble_stage1(&[
+#[allow(unused)]
+fn test1() {
+    println!("{:?}", disasm::disassemble_stage1(&[
             // REV A1
             0x21, 0x00,
             // EMU
@@ -46,11 +47,28 @@ fn main() {
             0x57, 0x57,
             // CLR B9
             0x39, 0x57,
-    ]));*/
+    ]));
+}
 
+#[allow(unused)]
+fn test2() {
     let mut file = File::open("/home/paul/Downloads/gspa-dos/tutor_c.out").unwrap();
     file.seek(SeekFrom::Start(0x148)).unwrap();
     let mut bytes = vec![0u8; 4682];
     file.read(&mut bytes).unwrap();
     println!("{:?}", disasm::disassemble_stage1(&bytes));
 }
+
+#[allow(unused)]
+fn test3() {
+    let mut file = File::open("/home/paul/Downloads/gspa-dos/tutor_c.out").unwrap();
+    file.seek(SeekFrom::Start(0x148)).unwrap();
+    let mut bytes = vec![0u8; 4];
+    file.read(&mut bytes).unwrap();
+    disasm::disassemble(&bytes);
+}
+
+fn main() {
+    test3();
+}
+

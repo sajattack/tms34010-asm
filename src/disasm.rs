@@ -1,6 +1,7 @@
 use bitvec::prelude::*;
 
 use crate::instruction::Instruction;
+use core::fmt::{self, Formatter, Write};
 
 use crate::symbol::{Rs, Rd, IW, IL, K, F, D, Address, FS, FE, N, M, Offset, Offset8, Z, Condition, RegList};
 
@@ -594,4 +595,32 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<(usize, Instruction)> {
         }
     }
     inst_vec
+}
+
+impl fmt::Display for Instruction
+{
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        match self {
+            Instruction::Setf(fs, fe, Some(f)) => {
+                write!(fmt, "SETF {},{},{}", fs, fe, f)
+            }
+            Instruction::Movk(k, rd) => {
+                write!(fmt, "MOVK {},{}", k, rd)
+            }
+            _ => {write!(fmt, "")}
+        }
+    }
+}
+
+pub fn disassemble_stage2(stage1_output: Vec<(usize, Instruction)>) -> String {
+    let mut disassembly = String::new();
+    for (pc, inst) in stage1_output {
+        writeln!(disassembly, "{:08x}\t{}", pc*16, inst).unwrap();
+    }
+    disassembly
+}
+
+
+pub fn disassemble(bytebuf: &[u8]) {
+    println!("{}", disassemble_stage2(disassemble_stage1(bytebuf)));
 }
