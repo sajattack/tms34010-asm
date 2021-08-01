@@ -1,4 +1,4 @@
-use crate::symbol::{Rs, Rd, IW, IL, K, F, D, Address, FS, FE, N, M, Offset, Z, Condition};
+use crate::symbol::{Rs, Rd, IW, IL, K, F, D, Address, FS, FE, N, M, Offset, Offset8, Z, Condition, RegList};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Instruction {
@@ -80,6 +80,8 @@ pub enum Instruction {
     Movk(K, Rd),
     Movx(Rs, Rd),
     Movy(Rs, Rd),
+    Mmtm(Rd, RegList),
+    Mmfm(Rs, RegList),
     // Graphics
     Cpw(Rs, Rd),
     Cvxyl(Rs, Rd),
@@ -125,8 +127,8 @@ pub enum Instruction {
     Dsjne(Rd, Offset),
     Dsjs(D, Rd, K), // the manual calls this offset rather than K but it's in the position of K and 5 bits long 
                     // it's also in with other K instructions
-    Ja(Condition, Offset),
-    Jr(Condition, Offset),
+    Ja(Condition, Address),
+    Jr(Condition, Offset8),
     Jrs(Condition, Offset),
     Jump(Rs),
     // Shift

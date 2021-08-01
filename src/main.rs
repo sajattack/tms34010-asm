@@ -3,7 +3,7 @@ use std::io::prelude::*;
 use std::io::SeekFrom;
 
 pub mod instruction;
-pub mod symbol;
+mod symbol;
 pub mod disasm;
 
 fn main() {
@@ -49,8 +49,8 @@ fn main() {
     ]));*/
 
     let mut file = File::open("/home/paul/Downloads/gspa-dos/tutor_c.out").unwrap();
-    file.seek(SeekFrom::Start(0x146)).unwrap();
-    let mut bytes = vec![0u8; 252];
+    file.seek(SeekFrom::Start(0x148)).unwrap();
+    let mut bytes = vec![0u8; 4682];
     file.read(&mut bytes).unwrap();
     println!("{:?}", disasm::disassemble_stage1(&bytes));
 }

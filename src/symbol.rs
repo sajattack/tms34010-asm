@@ -30,3 +30,5 @@ pub struct Condition(pub u8);
 pub struct D(pub bool);
 #[derive(Debug, Clone, Copy)]
 pub struct M(pub bool);
+#[derive(Debug, Clone, Copy)]
+pub struct RegList(pub u16);
