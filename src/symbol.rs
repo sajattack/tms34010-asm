@@ -21,10 +21,12 @@ pub struct N(pub u8);
 #[derive(Debug, Clone, Copy)]
 pub struct Offset8(pub u8);
 #[derive(Debug, Clone, Copy)]
-pub struct Offset16(pub u16);
+pub struct Offset(pub u16);
 #[derive(Debug, Clone, Copy)]
-pub struct Z(pub u8);
+pub struct Z(pub bool);
 #[derive(Debug, Clone, Copy)]
 pub struct Condition(pub u8);
 #[derive(Debug, Clone, Copy)]
 pub struct D(pub bool);
+#[derive(Debug, Clone, Copy)]
+pub struct M(pub bool);

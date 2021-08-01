@@ -3,7 +3,7 @@ use bitvec::prelude::*;
 use crate::instruction::Instruction;
 
 #[allow(unused)]
-use crate::symbol::{Rs, Rd, IW, IL, K, F, D, Address, FS, FE, N, Offset8, Offset16, Z, Condition};
+use crate::symbol::{Rs, Rd, IW, IL, K, F, D, Address, FS, FE, N, M, Offset, Z, Condition};
 
 pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
     let mut inst_vec = vec![];
@@ -23,6 +23,7 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                 let fe = *word.get(5).unwrap();
                 let k = word.get(5..=9).unwrap().load::<u8>();
                 let d = *word.get(10).unwrap();
+                let z = *word.get(7).unwrap();
                 match upper7 {
                     0b0000000 => {
                         match subop {
@@ -69,8 +70,17 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                                 inst_vec.push(Instruction::Clrc);
                             },
                             10 => {
-                                //Instruction::MovbAbsoluteToAbsolute,
-                                todo!("MovbAbsoluteToAbsolute");
+                                let mut src_addr: u32 = 0;
+                                let mut dst_addr: u32 = 0;
+                                let src_lsb = word_iter.next().unwrap().load::<u16>();
+                                let src_msb = word_iter.next().unwrap().load::<u16>();
+                                let dst_lsb = word_iter.next().unwrap().load::<u16>();
+                                let dst_msb = word_iter.next().unwrap().load::<u16>();
+                                src_addr.view_bits_mut::<Lsb0>()[0..=15].store::<u16>(src_lsb);
+                                src_addr.view_bits_mut::<Lsb0>()[16..=31].store::<u16>(src_msb);
+                                dst_addr.view_bits_mut::<Lsb0>()[0..=15].store::<u16>(dst_lsb);
+                                dst_addr.view_bits_mut::<Lsb0>()[16..=31].store::<u16>(dst_msb);
+                                inst_vec.push(Instruction::MovbAbsoluteToAbsolute(Address(src_addr), Address(dst_addr)));
                             },
                             11 => {
                                 inst_vec.push(Instruction::Dint);
@@ -100,9 +110,58 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                                 inst_vec.push(Instruction::Zext(Rd((rf as u8) << 4 | rd), F(f))); 
                             },
                             10 | 11 => {
-                                inst_vec.push(Instruction::Setf(FS(fs), FE(fe), F(f)));
+                                inst_vec.push(Instruction::Setf(FS(fs), FE(fe), Some(F(f))));
                             }
-                            _ => { /*todo!("bunch of move instructions I don't want to deal with right now")*/}
+                            12 => {
+                                let mut address: u32 = 0;
+                                let lsb = word_iter.next().unwrap().load::<u16>();
+                                let msb = word_iter.next().unwrap().load::<u16>();
+                                address.view_bits_mut::<Lsb0>()[0..=15].store::<u16>(lsb);
+                                address.view_bits_mut::<Lsb0>()[16..=31].store::<u16>(msb);
+                                inst_vec.push(Instruction::MoveFieldRegToAbsolute(Rs((rf as u8) << 4 | rd), Address(address), Some(F(f))));
+                            },
+                            13 => {
+                                let mut address: u32 = 0;
+                                let lsb = word_iter.next().unwrap().load::<u16>();
+                                let msb = word_iter.next().unwrap().load::<u16>();
+                                address.view_bits_mut::<Lsb0>()[0..=15].store::<u16>(lsb);
+                                address.view_bits_mut::<Lsb0>()[16..=31].store::<u16>(msb);
+                                inst_vec.push(Instruction::MoveFieldAbsoluteToReg(Address(address), Rd((rf as u8) << 4 | rd), Some(F(f))));
+                            },
+                            14 => {
+                                let mut src_addr: u32 = 0;
+                                let mut dst_addr: u32 = 0;
+                                let src_lsb = word_iter.next().unwrap().load::<u16>();
+                                let src_msb = word_iter.next().unwrap().load::<u16>();
+                                let dst_lsb = word_iter.next().unwrap().load::<u16>();
+                                let dst_msb = word_iter.next().unwrap().load::<u16>();
+                                src_addr.view_bits_mut::<Lsb0>()[0..=15].store::<u16>(src_lsb);
+                                src_addr.view_bits_mut::<Lsb0>()[16..=31].store::<u16>(src_msb);
+                                dst_addr.view_bits_mut::<Lsb0>()[0..=15].store::<u16>(dst_lsb);
+                                dst_addr.view_bits_mut::<Lsb0>()[16..=31].store::<u16>(dst_msb);
+                                inst_vec.push(Instruction::MoveFieldAbsoluteToAbsolute(Address(src_addr), Address(dst_addr), Some(F(f))));
+                            },
+                            15 => {
+                                if f {
+                                    // this has nothing to do with fields I was just too lazy to
+                                    // make an alias for bit 9
+                                    let mut address: u32 = 0;
+                                    let lsb = word_iter.next().unwrap().load::<u16>();
+                                    let msb = word_iter.next().unwrap().load::<u16>();
+                                    address.view_bits_mut::<Lsb0>()[0..=15].store::<u16>(lsb);
+                                    address.view_bits_mut::<Lsb0>()[16..=31].store::<u16>(msb);
+                                    inst_vec.push(Instruction::MovbAbsoluteToReg(Address(address), Rd((rf as u8) << 4 | rd)));
+                                } 
+                                else {
+                                    let mut address: u32 = 0;
+                                    let lsb = word_iter.next().unwrap().load::<u16>();
+                                    let msb = word_iter.next().unwrap().load::<u16>();
+                                    address.view_bits_mut::<Lsb0>()[0..=15].store::<u16>(lsb);
+                                    address.view_bits_mut::<Lsb0>()[16..=31].store::<u16>(msb);
+                                    inst_vec.push(Instruction::MovbRegToAbsolute(Rs((rf as u8) << 4 | rd), Address(address)));
+                                }
+                            },
+                            _ => {}
                         }
                     },
                     0b0000100 => {
@@ -119,7 +178,25 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                             11 => {
                                 inst_vec.push(Instruction::Rets(N(n)));
                             },
-                            _ => { /*todo!("bunch of move instructions I don't want to deal with right now")*/}
+                            12 => {
+                                todo!("MMTM - looks confusing")
+                            },
+                            13 => {
+                                todo!("MMFM - looks confusing")
+                            },
+                            14 => {
+                                let iw = word_iter.next().unwrap().load::<u16>();
+                                inst_vec.push(Instruction::Moviw(IW(iw),Rd((rf as u8) << 4 | rd)));
+                            },
+                            15 => {
+                                let mut il: u32 = 0;
+                                let lsb = word_iter.next().unwrap().load::<u16>();
+                                let msb = word_iter.next().unwrap().load::<u16>();
+                                il.view_bits_mut::<Lsb0>()[0..=15].store::<u16>(lsb);
+                                il.view_bits_mut::<Lsb0>()[16..=31].store::<u16>(msb);
+                                inst_vec.push(Instruction::Movil(IL(il),Rd((rf as u8) << 4 | rd)));
+                            },
+                            _ => {}
                         }
                     },
                     0b0000101 => {
@@ -191,7 +268,7 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                             },
                             9 => {
                                 let offset = word_iter.next().unwrap().load::<u16>();
-                                inst_vec.push(Instruction::Callr(Offset16(offset)));
+                                inst_vec.push(Instruction::Callr(Offset(offset)));
                             },
                             10 => {
                                 let mut address: u32 = 0;
@@ -206,15 +283,15 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                             },
                             12 => {
                                 let offset = word_iter.next().unwrap().load::<u16>();
-                                inst_vec.push(Instruction::Dsj(Rd((rf as u8) << 4 | rd), Offset16(offset)));
+                                inst_vec.push(Instruction::Dsj(Rd((rf as u8) << 4 | rd), Offset(offset)));
                             },
                             13 => {
                                 let offset = word_iter.next().unwrap().load::<u16>();
-                                inst_vec.push(Instruction::Dsjeq(Rd((rf as u8) << 4 | rd), Offset16(offset)));
+                                inst_vec.push(Instruction::Dsjeq(Rd((rf as u8) << 4 | rd), Offset(offset)));
                             },
                             14 => {
                                 let offset = word_iter.next().unwrap().load::<u16>();
-                                inst_vec.push(Instruction::Dsjne(Rd((rf as u8) << 4 | rd), Offset16(offset)));
+                                inst_vec.push(Instruction::Dsjne(Rd((rf as u8) << 4 | rd), Offset(offset)));
                             },
                             15 => {
                                 inst_vec.push(Instruction::Setc);
@@ -271,7 +348,7 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                         inst_vec.push(Instruction::Movk(K(k), Rd((rf as u8) << 4 | rd))); 
                     },
                     0b0001110 | 0b0001111 => {
-                        //todo!("BTSTK - don't feel like dealing with 1's complement right now");       
+                        todo!("BTSTK - don't feel like dealing with 1's complement right now");       
                     },
                     0b0010000 | 0b0010001 => {
                         inst_vec.push(Instruction::Slak(K(k), Rd((rf as u8) << 4 | rd)));
@@ -280,10 +357,10 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                         inst_vec.push(Instruction::Sllk(K(k), Rd((rf as u8) << 4 | rd)));
                     },
                     0b0010100 | 0b0010101 => {
-                        //todo!(SRAK - don't feel like dealing with 2's complement right now");
+                        todo!("SRAK - don't feel like dealing with 2's complement right now");
                     },
                     0b0010110 | 0b0010111 => {
-                        //todo!(SRLK - don't feel like dealing with 2's complement right now");
+                        todo!("SRLK - don't feel like dealing with 2's complement right now");
                     },
                     0b0011000 | 0b0011001 => {
                         inst_vec.push(Instruction::Rlk(K(k), Rd((rf as u8) << 4 | rd)));
@@ -310,7 +387,7 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                         inst_vec.push(Instruction::Btst(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
                     },
                     0b0100110 | 0b0100111 => {
-                         //todo!("move instruction I don't want to deal with right now")
+                        inst_vec.push(Instruction::MoveReg(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), M(f)));
                     },
                     0b0101000 => {
                         inst_vec.push(Instruction::And(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
@@ -361,6 +438,133 @@ pub fn disassemble_stage1(bytebuf: &[u8]) -> Vec<Instruction> {
                     },
                     0b0110111 => {
                         inst_vec.push(Instruction::Modu(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1000000 | 0b1000001 => {
+                        inst_vec.push(Instruction::MoveFieldRegToIndirect(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Some(F(f))));
+                    },
+                    0b1000010 | 0b1000011 => {
+                        inst_vec.push(Instruction::MoveFieldIndirectToReg(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Some(F(f))));
+                    },
+                    0b1000100 | 0b1000101 => {
+                        inst_vec.push(Instruction::MoveFieldIndirectToIndirect(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Some(F(f))));
+                    },
+                    0b1000110 => {
+                        inst_vec.push(Instruction::MovbRegToIndirect(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1000111 => {
+                        inst_vec.push(Instruction::MovbIndirectToReg(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1001000 | 0b1001001 => {
+                        inst_vec.push(Instruction::MoveFieldRegToIndirectPostinc(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Some(F(f))));
+                    },
+                    0b1001010 | 0b1001011 => {
+                        inst_vec.push(Instruction::MoveFieldIndirectPostincToReg(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Some(F(f))));
+                    },
+                    0b1001100 | 0b1001101 => {
+                        inst_vec.push(Instruction::MoveFieldIndirectToIndirectPostinc(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Some(F(f))));
+                    },
+                    0b1001110 => {
+                        inst_vec.push(Instruction::MovbIndirectToIndirect(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1010000 | 0b1010001 => {
+                        inst_vec.push(Instruction::MoveFieldRegToIndirectPredec(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Some(F(f))));
+                    },
+                    0b1010010 | 0b1010011 => {
+                        inst_vec.push(Instruction::MoveFieldIndirectPredecToReg(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Some(F(f))));
+                    },
+                    0b1010110 => {
+                        let offset = word_iter.next().unwrap().load::<u16>();
+                        inst_vec.push(Instruction::MovbRegToIndirectOffset(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Offset(offset)));
+                    },
+                    0b1010111 => {
+                        let offset = word_iter.next().unwrap().load::<u16>();
+                        inst_vec.push(Instruction::MovbIndirectOffsetToReg(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Offset(offset)));
+                    },
+                    0b1011000 | 0b1011001 => {
+                        let offset = word_iter.next().unwrap().load::<u16>();
+                        inst_vec.push(Instruction::MoveFieldRegToIndirectOffset(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Some(F(f)), Offset(offset)));
+                    },
+                    0b1011010 | 0b1011011 => {
+                        let offset = word_iter.next().unwrap().load::<u16>();
+                        inst_vec.push(Instruction::MoveFieldIndirectOffsetToReg(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Some(F(f)), Offset(offset)));
+                    },
+                    0b1011100 | 0b1011101 => {
+                        let src_offset = word_iter.next().unwrap().load::<u16>();
+                        let dst_offset = word_iter.next().unwrap().load::<u16>();
+                        inst_vec.push(Instruction::MoveFieldIndirectOffsetToIndirectOffset(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Some(F(f)), Offset(src_offset), Offset(dst_offset)));
+                    },
+                    0b1011110 => {
+                        let src_offset = word_iter.next().unwrap().load::<u16>();
+                        let dst_offset = word_iter.next().unwrap().load::<u16>();
+                        inst_vec.push(Instruction::MovbIndirectOffsetToIndirectOffset(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Offset(src_offset), Offset(dst_offset)));
+                    },
+                    0b1100000..=0b1100111 => {
+                        todo!("JA or JR")
+                    },
+                    0b1101000 | 0b1101001 => {
+                        let offset = word_iter.next().unwrap().load::<u16>();
+                        inst_vec.push(Instruction::MoveFieldIndirectOffsetToIndirectPostinc(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd), Some(F(f)), Offset(offset)));
+                    },
+                    0b1101010 | 0b1101011 => {
+                        match subop {
+                            0 => {
+                                let mut address: u32 = 0;
+                                let lsb = word_iter.next().unwrap().load::<u16>();
+                                let msb = word_iter.next().unwrap().load::<u16>();
+                                address.view_bits_mut::<Lsb0>()[0..=15].store::<u16>(lsb);
+                                address.view_bits_mut::<Lsb0>()[16..=31].store::<u16>(msb);
+                                inst_vec.push(Instruction::MoveFieldAbsoluteToIndirectPostinc(Address(address), Rd((rf as u8) << 4 | rd), Some(F(f))));
+                            },
+                            8 => {
+                                inst_vec.push(Instruction::Exgf(Rd((rf as u8) << 4 | rd), Some(F(f))));
+                            },
+                            _ => {}
+                        }
+                    },
+                    0b1101111 => {
+                        inst_vec.push(Instruction::Line(Z(z)));
+                    },
+                    0b1110000 => {
+                        inst_vec.push(Instruction::Addxy(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1110001 => {
+                        inst_vec.push(Instruction::Subxy(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1110010 => {
+                        inst_vec.push(Instruction::Cmpxy(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1110011 => {
+                        inst_vec.push(Instruction::Cpw(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1110100 => {
+                        inst_vec.push(Instruction::Cvxyl(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1110110 => {
+                        inst_vec.push(Instruction::Movx(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1110111 => {
+                        inst_vec.push(Instruction::Movy(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1111000 => {
+                        inst_vec.push(Instruction::PixtRegToIndirectxy(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1111001 => {
+                        inst_vec.push(Instruction::PixtIndirectxyToReg(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1111010 => {
+                        inst_vec.push(Instruction::PixtIndirectxytoIndirectxy(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1111011 => {
+                        inst_vec.push(Instruction::Drav(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1111100 => {
+                        inst_vec.push(Instruction::PixtRegToIndirect(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1111101 => {
+                        inst_vec.push(Instruction::PixtIndirectToReg(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
+                    },
+                    0b1111110 => {
+                        inst_vec.push(Instruction::PixtIndirectToIndirect(Rs((rf as u8) << 4 | rs), Rd((rf as u8) << 4 | rd)));
                     },
                     _ => {}
                 }

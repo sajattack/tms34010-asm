@@ -1,13 +1,13 @@
-/*use std::fs::File;
+use std::fs::File;
 use std::io::prelude::*;
-use std::io::SeekFrom;*/
+use std::io::SeekFrom;
 
 pub mod instruction;
 pub mod symbol;
 pub mod disasm;
 
 fn main() {
-    println!("{:?}", disasm::disassemble_stage1(&[
+    /*println!("{:?}", disasm::disassemble_stage1(&[
             // REV A1
             0x21, 0x00,
             // EMU
@@ -46,11 +46,11 @@ fn main() {
             0x57, 0x57,
             // CLR B9
             0x39, 0x57,
-    ]));
+    ]));*/
 
-    /*let mut file = File::open("/home/paul/Downloads/gspa-dos/tutor_c.out").unwrap();
+    let mut file = File::open("/home/paul/Downloads/gspa-dos/tutor_c.out").unwrap();
     file.seek(SeekFrom::Start(0x146)).unwrap();
-    let mut bytes = vec![0u8; 100];
+    let mut bytes = vec![0u8; 252];
     file.read(&mut bytes).unwrap();
-    println!("{:?}", disasm::disassemble_stage1(&bytes));*/
+    println!("{:?}", disasm::disassemble_stage1(&bytes));
 }

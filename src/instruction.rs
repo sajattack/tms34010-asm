@@ -1,4 +1,4 @@
-use crate::symbol::{Rs, Rd, IW, IL, K, F, D, Address, FS, FE, N, Offset8, Offset16, Z, Condition};
+use crate::symbol::{Rs, Rd, IW, IL, K, F, D, Address, FS, FE, N, M, Offset, Z, Condition};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Instruction {
@@ -51,13 +51,13 @@ pub enum Instruction {
     MovbRegToIndirect(Rs, Rd),
     MovbIndirectToReg(Rs, Rd),
     MovbIndirectToIndirect(Rs, Rd),
-    MovbRegToIndirectOffset(Rs, Rd, Offset8),
-    MovbIndirectToRegOffset(Rs, Rd, Offset8),
-    MovbIndirectToIndirectOffset(Rs, Rd, Offset8),
+    MovbRegToIndirectOffset(Rs, Rd, Offset),
+    MovbIndirectOffsetToReg(Rs, Rd, Offset),
+    MovbIndirectOffsetToIndirectOffset(Rs, Rd, Offset, Offset),
     MovbRegToAbsolute(Rs, Address),
     MovbAbsoluteToReg(Address, Rd),
     MovbAbsoluteToAbsolute(Address, Address),
-    MoveReg(Rs, Rd),
+    MoveReg(Rs, Rd, M),
     MoveFieldRegToIndirect(Rs, Rd, Option<F>),
     MoveFieldRegToIndirectPredec(Rs, Rd, Option<F>),
     MoveFieldRegToIndirectPostinc(Rs, Rd, Option<F>),
@@ -67,10 +67,10 @@ pub enum Instruction {
     MoveFieldIndirectToIndirect(Rs, Rd, Option<F>),
     MoveFieldIndirectToIndirectPredec(Rs, Rd, Option<F>),
     MoveFieldIndirectToIndirectPostinc(Rs, Rd, Option<F>),
-    MoveFieldRegToIndirectOffset(Rs, Rd, Option<F>, Offset8),
-    MoveFieldIndirectToRegOffset(Rs, Rd, Option<F>, Offset8),
-    MoveFieldIndirectToIndirectOffsetPostinc(Rs, Rd, Option<F>, Offset8),
-    MoveFieldIndirectToIndirectOffset(Rs, Rd, Option<F>, Offset8, Offset8),
+    MoveFieldRegToIndirectOffset(Rs, Rd, Option<F>, Offset),
+    MoveFieldIndirectOffsetToReg(Rs, Rd, Option<F>, Offset),
+    MoveFieldIndirectOffsetToIndirectPostinc(Rs, Rd, Option<F>, Offset),
+    MoveFieldIndirectOffsetToIndirectOffset(Rs, Rd, Option<F>, Offset, Offset),
     MoveFieldRegToAbsolute(Rs, Address, Option<F>),
     MoveFieldAbsoluteToReg(Address, Rd, Option<F>),
     MoveFieldAbsoluteToIndirectPostinc(Address, Rd, Option<F>),
@@ -102,11 +102,11 @@ pub enum Instruction {
     // Control
     Call(Rs),
     Calla(Address),
-    Callr(Offset16),
+    Callr(Offset),
     Dint,
     Eint,
     Emu,
-    Exgf(Rd, F),
+    Exgf(Rd, Option<F>),
     Exgpc(Rd),
     Getpc(Rd),
     Getst(Rd),
@@ -117,17 +117,17 @@ pub enum Instruction {
     Reti,
     Rets(N),
     Rev(Rd),
-    Setf(FS, FE, F),
+    Setf(FS, FE, Option<F>),
     Trap(N),
     // Jump
-    Dsj(Rd, Offset16),
-    Dsjeq(Rd, Offset16),
-    Dsjne(Rd, Offset16),
+    Dsj(Rd, Offset),
+    Dsjeq(Rd, Offset),
+    Dsjne(Rd, Offset),
     Dsjs(D, Rd, K), // the manual calls this offset rather than K but it's in the position of K and 5 bits long 
                     // it's also in with other K instructions
-    Ja(Condition, Offset16),
-    Jr(Condition, Offset16),
-    Jrs(Condition, Offset16),
+    Ja(Condition, Offset),
+    Jr(Condition, Offset),
+    Jrs(Condition, Offset),
     Jump(Rs),
     // Shift
     Rlk(K, Rd),
