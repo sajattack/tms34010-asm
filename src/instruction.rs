@@ -1,4 +1,7 @@
-use crate::symbol::{Rs, Rd, IW, IL, K, F, D, Address, FS, FE, N, M, Offset, Offset8, Z, Condition, RegList};
+use crate::symbol::{
+    Address, Condition, /*M,*/ Offset, Offset8, Rd, RegList, Rs, D, F, FE, FS, IL, IW, K, N,
+    PC, Z,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Instruction {
@@ -13,7 +16,7 @@ pub enum Instruction {
     And(Rs, Rd),
     Andi(IL, Rd),
     Andn(Rs, Rd),
-    Andni(IL, Rd),
+    //Andni(IL, Rd),  somehow this is an alias of andi?
     Btstk(K, Rd),
     Btst(Rs, Rd),
     Clr(Rd),
@@ -22,7 +25,7 @@ pub enum Instruction {
     Cmpiw(IW, Rd),
     Cmpil(IL, Rd),
     Cmpxy(Rs, Rd),
-    Dec(Rd),      
+    Dec(Rd),
     Divs(Rs, Rd),
     Divu(Rs, Rd),
     Inc(Rd),
@@ -57,7 +60,7 @@ pub enum Instruction {
     MovbRegToAbsolute(Rs, Address),
     MovbAbsoluteToReg(Address, Rd),
     MovbAbsoluteToAbsolute(Address, Address),
-    MoveReg(Rs, Rd, M),
+    MoveReg(Rs, Rd /*M*/), // might need M for asm later but we definitely don't need it for disasm
     MoveFieldRegToIndirect(Rs, Rd, Option<F>),
     MoveFieldRegToIndirectPredec(Rs, Rd, Option<F>),
     MoveFieldRegToIndirectPostinc(Rs, Rd, Option<F>),
@@ -104,7 +107,7 @@ pub enum Instruction {
     // Control
     Call(Rs),
     Calla(Address),
-    Callr(Offset),
+    Callr(Offset, PC),
     Dint,
     Eint,
     Emu,
@@ -125,10 +128,10 @@ pub enum Instruction {
     Dsj(Rd, Offset),
     Dsjeq(Rd, Offset),
     Dsjne(Rd, Offset),
-    Dsjs(D, Rd, K), // the manual calls this offset rather than K but it's in the position of K and 5 bits long 
-                    // it's also in with other K instructions
+    Dsjs(D, Rd, K), // the manual calls this offset rather than K but it's in the position of K and 5 bits long
+    // it's also in with other K instructions
     Ja(Condition, Address),
-    Jr(Condition, Offset8),
+    Jr(Condition, Offset8, PC),
     Jrs(Condition, Offset),
     Jump(Rs),
     // Shift
