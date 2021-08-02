@@ -48,11 +48,7 @@ impl fmt::Display for IL {
 pub struct K(pub u8);
 impl fmt::Display for K {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        if self.0 == 0 {
-            write!(fmt, "32")
-        } else {
-            write!(fmt, "{}", self.0)
-        }
+        write!(fmt, "{}", self.0)
     }
 }
 #[derive(Debug, Clone, Copy)]
@@ -134,6 +130,13 @@ impl fmt::Display for Condition {
 
 #[derive(Debug, Clone, Copy)]
 pub struct D(pub bool);
+impl fmt::Display for D {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "{}", self.0 as u8)
+    }
+}
+
+
 #[derive(Debug, Clone, Copy)]
 pub struct M(pub bool);
 #[derive(Debug, Clone, Copy)]

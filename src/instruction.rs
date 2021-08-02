@@ -128,7 +128,7 @@ pub enum Instruction {
     Dsj(Rd, Offset),
     Dsjeq(Rd, Offset),
     Dsjne(Rd, Offset),
-    Dsjs(D, Rd, K), // the manual calls this offset rather than K but it's in the position of K and 5 bits long
+    Dsjs(D, Rd, K, PC), // the manual calls this offset rather than K but it's in the position of K and 5 bits long
     // it's also in with other K instructions
     Ja(Condition, Address),
     Jr(Condition, Offset8, PC),
