@@ -63,7 +63,13 @@ impl fmt::Display for F {
 pub struct FS(pub u8);
 impl fmt::Display for FS {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        write!(fmt, "{:X}h", self.0)
+        if self.0 == 0 {
+            write!(fmt, "32")
+        }
+        else 
+        {
+            write!(fmt, "{}", self.0)
+        }
     }
 }
 

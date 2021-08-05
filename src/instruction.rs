@@ -61,23 +61,23 @@ pub enum Instruction {
     MovbAbsoluteToReg(Address, Rd),
     MovbAbsoluteToAbsolute(Address, Address),
     MoveReg(Rs, Rd /*M*/), // might need M for asm later but we definitely don't need it for disasm
-    MoveFieldRegToIndirect(Rs, Rd, Option<F>),
-    MoveFieldRegToIndirectPredec(Rs, Rd, Option<F>),
-    MoveFieldRegToIndirectPostinc(Rs, Rd, Option<F>),
-    MoveFieldIndirectToReg(Rs, Rd, Option<F>),
-    MoveFieldIndirectPredecToReg(Rs, Rd, Option<F>),
-    MoveFieldIndirectPostincToReg(Rs, Rd, Option<F>),
-    MoveFieldIndirectToIndirect(Rs, Rd, Option<F>),
-    MoveFieldIndirectToIndirectPredec(Rs, Rd, Option<F>),
-    MoveFieldIndirectToIndirectPostinc(Rs, Rd, Option<F>),
-    MoveFieldRegToIndirectOffset(Rs, Rd, Option<F>, Offset),
-    MoveFieldIndirectOffsetToReg(Rs, Rd, Option<F>, Offset),
-    MoveFieldIndirectOffsetToIndirectPostinc(Rs, Rd, Option<F>, Offset),
-    MoveFieldIndirectOffsetToIndirectOffset(Rs, Rd, Option<F>, Offset, Offset),
-    MoveFieldRegToAbsolute(Rs, Address, Option<F>),
-    MoveFieldAbsoluteToReg(Address, Rd, Option<F>),
-    MoveFieldAbsoluteToIndirectPostinc(Address, Rd, Option<F>),
-    MoveFieldAbsoluteToAbsolute(Address, Address, Option<F>),
+    MoveFieldRegToIndirect(Rs, Rd, F),
+    MoveFieldRegToIndirectPredec(Rs, Rd, F),
+    MoveFieldRegToIndirectPostinc(Rs, Rd, F),
+    MoveFieldIndirectToReg(Rs, Rd, F),
+    MoveFieldIndirectPredecToReg(Rs, Rd, F),
+    MoveFieldIndirectPostincToReg(Rs, Rd, F),
+    MoveFieldIndirectToIndirect(Rs, Rd, F),
+    MoveFieldIndirectToIndirectPredec(Rs, Rd, F),
+    MoveFieldIndirectToIndirectPostinc(Rs, Rd, F),
+    MoveFieldRegToIndirectOffset(Rs, Rd, F, Offset),
+    MoveFieldIndirectOffsetToReg(Rs, Rd, F, Offset),
+    MoveFieldIndirectOffsetToIndirectPostinc(Rs, Rd, F, Offset),
+    MoveFieldIndirectOffsetToIndirectOffset(Rs, Rd, F, Offset, Offset),
+    MoveFieldRegToAbsolute(Rs, Address, F),
+    MoveFieldAbsoluteToReg(Address, Rd, F),
+    MoveFieldAbsoluteToIndirectPostinc(Address, Rd, F),
+    MoveFieldAbsoluteToAbsolute(Address, Address, F),
     Moviw(IW, Rd),
     Movil(IL, Rd),
     Movk(K, Rd),
@@ -103,7 +103,7 @@ pub enum Instruction {
     PixtIndirectToReg(Rs, Rd),
     PixtIndirectToIndirect(Rs, Rd),
     PixtIndirectxyToReg(Rs, Rd),
-    PixtIndirectxytoIndirectxy(Rs, Rd),
+    PixtIndirectxyToIndirectxy(Rs, Rd),
     // Control
     Call(Rs),
     Calla(Address),
@@ -111,8 +111,8 @@ pub enum Instruction {
     Dint,
     Eint,
     Emu,
-    Exgf(Rd, Option<F>),
-    Exgpc(Rd),
+    Exgf(Rd, F),
+    Exgpc(Rd, F),
     Getpc(Rd),
     Getst(Rd),
     Nop,
@@ -122,7 +122,7 @@ pub enum Instruction {
     Reti,
     Rets(N),
     Rev(Rd),
-    Setf(FS, FE, Option<F>),
+    Setf(FS, FE, F),
     Trap(N),
     // Jump
     Dsj(Rd, Offset),
@@ -145,4 +145,142 @@ pub enum Instruction {
     Sra(Rs, Rd),
     Srlk(K, Rd),
     Srl(Rs, Rd),
+    // not actually an instruction, just a convenience for me
+    // there's probably a smarter way to do this
+    Dw(IW),
+}
+
+impl Instruction {
+    pub fn get_mnemonic(&self) -> &'static str {
+        match self {
+            Self::Abs(_) => "ABS",
+            Self::Add(_, _) => "ADD",
+            Self::Addc(_, _) => "ADDC",
+            Self::Addiw(_, _) | Self::Addil(_, _) => "ADDI",
+            Self::Addk(_, _) => "ADDK",
+            Self::Addxy(_, _) => "ADDXY",
+            Self::And(_, _) => "AND",
+            Self::Andi(_, _) => "ANDI",
+            Self::Andn(_, _) => "ANDN",
+            Self::Btstk(_, _) | Self::Btst(_, _) => "BTST",
+            Self::Clr(_) => "CLR",
+            Self::Clrc => "CLRC",
+            Self::Cmp(_, _) => "CMP",
+            Self::Cmpiw(_, _) | Self::Cmpil(_, _) => "CMPI",
+            Self::Cmpxy(_, _) => "CMPXY",
+            Self::Dec(_) => "DEC",
+            Self::Divs(_, _) => "DIVS",
+            Self::Divu(_, _) => "DIVU",
+            Self::Inc(_) => "INC",
+            Self::Lmo(_, _) => "LMO",
+            Self::Mods(_, _) => "MODS",
+            Self::Modu(_, _) => "MODU",
+            Self::Mpys(_, _) => "MPYS",
+            Self::Mpyu(_, _) => "MPYU",
+            Self::Neg(_) => "NEG",
+            Self::Negb(_) => "NEGB",
+            Self::Not(_) => "NOT",
+            Self::Or(_, _) => "OR",
+            Self::Ori(_, _) => "ORI",
+            Self::Setc => "SETC",
+            Self::Sext(_, _) => "SEXT",
+            Self::Sub(_, _) => "SUB",
+            Self::Subb(_, _) => "SUBB",
+            Self::Subk(_, _) => "SUBK",
+            Self::Subxy(_, _) => "SUBXY",
+            Self::Subil(_, _) | Self::Subiw(_, _) => "SUBI",
+            Self::Xor(_, _) => "XOR",
+            Self::Xori(_, _) => "XORI",
+            Self::Zext(_, _) => "ZEXT",
+            Self::MovbRegToIndirect(_, _)
+            | Self::MovbIndirectToReg(_, _)
+            | Self::MovbIndirectToIndirect(_, _)
+            | Self::MovbRegToIndirectOffset(_, _, _)
+            | Self::MovbIndirectOffsetToReg(_, _, _)
+            | Self::MovbIndirectOffsetToIndirectOffset(_, _, _, _)
+            | Self::MovbRegToAbsolute(_, _)
+            | Self::MovbAbsoluteToReg(_, _)
+            | Self::MovbAbsoluteToAbsolute(_, _) => "MOVB",
+            Self::MoveReg(_, _)
+            | Self::MoveFieldRegToIndirect(_, _, _)
+            | Self::MoveFieldRegToIndirectPredec(_, _, _)
+            | Self::MoveFieldRegToIndirectPostinc(_, _, _)
+            | Self::MoveFieldIndirectToReg(_, _, _)
+            | Self::MoveFieldIndirectPredecToReg(_, _, _)
+            | Self::MoveFieldIndirectPostincToReg(_, _, _)
+            | Self::MoveFieldIndirectToIndirect(_, _, _)
+            | Self::MoveFieldIndirectToIndirectPredec(_, _, _)
+            | Self::MoveFieldIndirectToIndirectPostinc(_, _, _)
+            | Self::MoveFieldRegToIndirectOffset(_, _, _, _)
+            | Self::MoveFieldIndirectOffsetToReg(_, _, _, _)
+            | Self::MoveFieldIndirectOffsetToIndirectPostinc(_, _, _, _)
+            | Self::MoveFieldIndirectOffsetToIndirectOffset(_, _, _, _, _)
+            | Self::MoveFieldRegToAbsolute(_, _, _)
+            | Self::MoveFieldAbsoluteToReg(_, _, _)
+            | Self::MoveFieldAbsoluteToIndirectPostinc(_, _, _)
+            | Self::MoveFieldAbsoluteToAbsolute(_, _, _) => "MOVE",
+            Self::Movil(_, _) | Self::Moviw(_, _) => "MOVI",
+            Self::Movk(_, _) => "MOVK",
+            Self::Movx(_, _) => "MOVX",
+            Self::Movy(_, _) => "MOVY",
+            Self::Mmtm(_, _) => "MMTM",
+            Self::Mmfm(_, _) => "MMFM",
+            Self::Cpw(_, _) => "CPW",
+            Self::Cvxyl(_, _) => "CVXYL",
+            Self::Drav(_, _) => "DRAV",
+            Self::Filll => "FILL L",
+            Self::Fillxy => "FILL XY",
+            Self::Line(_) => "LINE",
+            Self::Pixbltbl => "PIXBLT B,L",
+            Self::Pixbltbxy => "PIXBLT B,XY",
+            Self::Pixbltlxy => "PIXBLT L,XY",
+            Self::Pixbltll => "PIXBLT L,L",
+            Self::Pixbltxyl => "PIXBLT XY,L",
+            Self::Pixbltxyxy => "PIXBLT XY,XY",
+            Self::PixtRegToIndirect(_, _) 
+            | Self::PixtRegToIndirectxy(_, _)
+            | Self::PixtIndirectToReg(_, _)
+            | Self::PixtIndirectToIndirect(_, _)
+            | Self::PixtIndirectxyToReg(_, _)
+            | Self::PixtIndirectxyToIndirectxy(_, _) => "PIXT",
+            Self::Call(_) => "CALL",
+            Self::Calla(_) => "CALLA",
+            Self::Callr(_, _) => "CALLR",
+            Self::Dint => "DINT",
+            Self::Eint => "EINT",
+            Self::Emu => "EMU",
+            Self::Exgf(_, _) => "EXGF",
+            Self::Exgpc(_, _) => "EXGPC",
+            Self::Getpc(_) => "GETPC",
+            Self::Getst(_) => "GETST",
+            Self::Nop => "NOP",
+            Self::Popst => "POPST",
+            Self::Pushst => "PUSHST",
+            Self::Putst(_) => "PUTST",
+            Self::Reti => "RETI",
+            Self::Rets(_) => "RETS",
+            Self::Rev(_) => "REV",
+            Self::Setf(_, _, _) => "SETF",
+            Self::Trap(_) => "TRAP",
+            Self::Dsj(_, _) => "DSJ",
+            Self::Dsjeq(_, _) => "DSJEQ",
+            Self::Dsjne(_, _) => "DSJNE",
+            Self::Dsjs(_, _, _, _) => "DSJS",
+            Self::Ja(_, _) => "JA",
+            Self::Jr(_, _, _) => "JR",
+            Self::Jrs(_, _) => "JRS",
+            Self::Jump(_) => "JUMP",
+            Self::Rlk(_, _) => "RLK",
+            Self::Rl(_, _) => "RL",
+            Self::Slak(_, _) => "SLAK",
+            Self::Sla(_, _) => "SLA",
+            Self::Sllk(_, _) => "SLLK",
+            Self::Sll(_, _) => "SLL",
+            Self::Srak(_, _) => "SRAK",
+            Self::Sra(_, _) => "SRA",
+            Self::Srlk(_, _) => "SRLK",
+            Self::Srl(_, _) => "SRL",
+            Self::Dw(_) => "DW",
+        }
+    }
 }

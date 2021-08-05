@@ -14,6 +14,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
     loop {
         match word_iter.next() {
             Some((pc, word)) => {
+                let mut bad = false;
                 let upper7 = word.get(9..=15).unwrap().load::<u8>();
                 let subop = word.get(5..=8).unwrap().load::<u8>();
                 let rs = word.get(5..=8).unwrap().load::<u8>();
@@ -47,7 +48,10 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             9 => {
                                 inst_vec.push((
                                     pc + start_addr,
-                                    Instruction::Exgpc(Rd((rf as u8) << 4 | rd)),
+                                    Instruction::Exgpc(
+                                        Rd((rf as u8) << 4 | rd),
+                                        F(f)
+                                    ),
                                     vec![word.load::<u16>()],
                                 ));
                             }
@@ -96,7 +100,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                     vec![word.load::<u16>()],
                                 ));
                             }
-                            _ => {}
+                            _ => { bad = true; }
                         }
                     }
                     0b0000001 => match subop {
@@ -169,7 +173,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 vec![word.load::<u16>()],
                             ));
                         }
-                        _ => {}
+                        _ => { bad = true; }
                     },
                     0b0000010 | 0b0000011 => {
                         match subop {
@@ -190,7 +194,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             10 | 11 => {
                                 inst_vec.push((
                                     pc + start_addr,
-                                    Instruction::Setf(FS(fs), FE(fe), Some(F(f))),
+                                    Instruction::Setf(FS(fs), FE(fe), F(f)),
                                     vec![word.load::<u16>()],
                                 ));
                             }
@@ -205,7 +209,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                     Instruction::MoveFieldRegToAbsolute(
                                         Rs((rf as u8) << 4 | rd),
                                         Address(address),
-                                        Some(F(f)),
+                                        F(f),
                                     ),
                                     vec![word.load::<u16>(), lsb, msb],
                                 ));
@@ -221,7 +225,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                     Instruction::MoveFieldAbsoluteToReg(
                                         Address(address),
                                         Rd((rf as u8) << 4 | rd),
-                                        Some(F(f)),
+                                        F(f),
                                     ),
                                     vec![word.load::<u16>(), lsb, msb],
                                 ));
@@ -242,7 +246,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                     Instruction::MoveFieldAbsoluteToAbsolute(
                                         Address(src_addr),
                                         Address(dst_addr),
-                                        Some(F(f)),
+                                        F(f),
                                     ),
                                     vec![word.load::<u16>(), src_lsb, src_msb, dst_lsb, dst_msb],
                                 ));
@@ -280,7 +284,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                     ));
                                 }
                             }
-                            _ => {}
+                            _ => { bad = true; }
                         }
                     }
                     0b0000100 => match subop {
@@ -348,7 +352,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 vec![word.load::<u16>(), lsb, msb],
                             ));
                         }
-                        _ => {}
+                        _ => { bad = true; }
                     },
                     0b0000101 => match subop {
                         8 => {
@@ -435,7 +439,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 vec![word.load::<u16>(), iw],
                             ));
                         }
-                        _ => {}
+                        _ => { bad = true; }
                     },
                     0b0000110 => match subop {
                         8 => {
@@ -511,7 +515,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 vec![word.load::<u16>()],
                             ));
                         }
-                        _ => {}
+                        _ => { bad = true; }
                     },
                     0b0000111 => match subop {
                         8 => {
@@ -570,7 +574,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 vec![word.load::<u16>()],
                             ));
                         }
-                        _ => {}
+                        _ => { bad = true; }
                     },
                     0b0001000 | 0b0001001 => {
                         if k == 1 {
@@ -842,7 +846,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldRegToIndirect(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                             ),
                             vec![word.load::<u16>()],
                         ));
@@ -853,7 +857,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldIndirectToReg(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                             ),
                             vec![word.load::<u16>()],
                         ));
@@ -864,7 +868,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldIndirectToIndirect(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                             ),
                             vec![word.load::<u16>()],
                         ));
@@ -895,7 +899,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldRegToIndirectPostinc(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                             ),
                             vec![word.load::<u16>()],
                         ));
@@ -906,7 +910,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldIndirectPostincToReg(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                             ),
                             vec![word.load::<u16>()],
                         ));
@@ -917,7 +921,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldIndirectToIndirectPostinc(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                             ),
                             vec![word.load::<u16>()],
                         ));
@@ -938,7 +942,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldRegToIndirectPredec(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                             ),
                             vec![word.load::<u16>()],
                         ));
@@ -949,7 +953,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldIndirectPredecToReg(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                             ),
                             vec![word.load::<u16>()],
                         ));
@@ -960,7 +964,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldIndirectToIndirectPredec(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                             ),
                             vec![word.load::<u16>()],
                         ));
@@ -996,7 +1000,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldRegToIndirectOffset(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                                 Offset(offset),
                             ),
                             vec![word.load::<u16>(), offset],
@@ -1009,7 +1013,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldIndirectOffsetToReg(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                                 Offset(offset),
                             ),
                             vec![word.load::<u16>(), offset],
@@ -1023,7 +1027,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldIndirectOffsetToIndirectOffset(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                                 Offset(src_offset),
                                 Offset(dst_offset),
                             ),
@@ -1083,7 +1087,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             Instruction::MoveFieldIndirectOffsetToIndirectPostinc(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
-                                Some(F(f)),
+                                F(f),
                                 Offset(offset),
                             ),
                             vec![word.load::<u16>(), offset],
@@ -1101,7 +1105,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 Instruction::MoveFieldAbsoluteToIndirectPostinc(
                                     Address(address),
                                     Rd((rf as u8) << 4 | rd),
-                                    Some(F(f)),
+                                    F(f),
                                 ),
                                 vec![word.load::<u16>(), lsb, msb],
                             ));
@@ -1109,11 +1113,11 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                         8 => {
                             inst_vec.push((
                                 pc + start_addr,
-                                Instruction::Exgf(Rd((rf as u8) << 4 | rd), Some(F(f))),
+                                Instruction::Exgf(Rd((rf as u8) << 4 | rd), F(f)),
                                 vec![word.load::<u16>()],
                             ));
                         }
-                        _ => {}
+                        _ => { bad = true; }
                     },
                     0b1101111 => {
                         inst_vec.push((
@@ -1194,7 +1198,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                     0b1111010 => {
                         inst_vec.push((
                             pc + start_addr,
-                            Instruction::PixtIndirectxytoIndirectxy(
+                            Instruction::PixtIndirectxyToIndirectxy(
                                 Rs((rf as u8) << 4 | rs),
                                 Rd((rf as u8) << 4 | rd),
                             ),
@@ -1238,7 +1242,10 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             vec![word.load::<u16>()],
                         ));
                     }
-                    _ => {}
+                    _ => { bad = true; }
+                }
+                if bad == true {
+                    inst_vec.push((pc + start_addr, Instruction::Dw(IW(word.load::<u16>())), vec![word.load::<u16>()]));
                 }
             }
             None => {
@@ -1252,51 +1259,122 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
 impl fmt::Display for Instruction {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
-            Instruction::Setf(fs, fe, Some(f)) => {
-                write!(fmt, "SETF      {},{},{}", fs, fe, f)
+            Instruction::Lmo(rs, rd) |
+            Instruction::Xor(rs, rd) |
+            Instruction::Cmp(rs, rd) |
+            Instruction::Or(rs, rd)  |
+            Instruction::Sub(rs, rd) |
+            Instruction::Subb(rs, rd) |
+            Instruction::Subxy(rs, rd) |
+            Instruction::Add(rs, rd) |
+            Instruction::Addc(rs, rd) |
+            Instruction::Addxy(rs, rd) |
+            Instruction::And(rs, rd) |
+            Instruction::Andn(rs, rd) |
+            Instruction::Btst(rs, rd) |
+            Instruction::Cmpxy(rs, rd) |
+            Instruction::Divs(rs, rd) |
+            Instruction::Divu(rs, rd) |
+            Instruction::Mods(rs, rd) |
+            Instruction::Modu(rs, rd) |
+            Instruction::Mpys(rs, rd) |
+            Instruction::Mpyu(rs, rd) |
+            Instruction::MoveReg(rs, rd) |
+            Instruction::Movx(rs, rd) |
+            Instruction::Movy(rs, rd) |
+            Instruction::Cpw(rs, rd) |
+            Instruction::Cvxyl(rs, rd) |
+            Instruction::Rl(rs, rd) |
+            Instruction::Sla(rs, rd) |
+            Instruction::Sll(rs, rd) |
+            Instruction::Sra(rs, rd) |
+            Instruction::Srl(rs, rd) |
+            Instruction::Drav(rs, rd) => {
+                write!(fmt, "{} {}, {}", self.get_mnemonic(), rs, rd)
+            }
+
+            Instruction::Pixbltbxy |
+            Instruction::Pixbltbl |
+            Instruction::Pixbltlxy |
+            Instruction::Pixbltxyxy |
+            Instruction::Pixbltxyl | 
+            Instruction::Pixbltll |
+            Instruction::Fillxy |
+            Instruction::Filll |
+            Instruction::Emu |
+            Instruction::Popst |
+            Instruction::Pushst |
+            Instruction::Nop |
+            Instruction::Clrc |
+            Instruction::Dint => {
+                write!(fmt, "{}", self.get_mnemonic())
+            }
+
+
+            Instruction::Getpc(rd) |
+            Instruction::Getst(rd) |
+            Instruction::Neg(rd) |
+            Instruction::Negb(rd) |
+            Instruction::Inc(rd) |
+            Instruction::Dec(rd) |
+            Instruction::Abs(rd) |
+            Instruction::Rev(rd) |
+            Instruction::Clr(rd) => {
+                write!(fmt, "{} {}", self.get_mnemonic(), rd)
+            }
+
+
+
+            Instruction::Jump(rs) |
+            Instruction::Call(rs) |
+            Instruction::Putst(rs) => {
+                write!(fmt, "{} {}", self.get_mnemonic(), rs)
+            }
+
+            Instruction::Moviw(iw, rd) |
+            Instruction::Subiw(iw, rd) |
+            Instruction::Addiw(iw, rd) => {
+                write!(fmt, "{} {}, {}", self.get_mnemonic(), iw, rd)
+            }
+
+
+            Instruction::Addil(il, rd) |
+            Instruction::Subil(il, rd) |
+            Instruction::Movil(il, rd) |
+            Instruction::Xori(il, rd) |
+            Instruction::Ori(il, rd) => {
+                write!(fmt, "{} {}, {}", self.get_mnemonic(), il, rd) 
+            }
+
+            Instruction::Setf(fs, fe, f) => {
+                write!(fmt, "{} {},{},{}", self.get_mnemonic(), fs, fe, f)
             }
             Instruction::Movk(k, rd) => {
                 let special_k = if  k.0 == 0 { K(32) } else { *k };
-                write!(fmt, "MOVK      {},{}", special_k, rd)
+                write!(fmt, "{} {},{}", self.get_mnemonic(), special_k, rd)
             }
-            Instruction::MoveFieldRegToAbsolute(rs, addr, Some(f)) => {
-                write!(fmt, "MOVE      {},@{},{}", rs, addr, f)
-            }
-            Instruction::Moviw(iw, rd) => {
-                write!(fmt, "MOVI      {},{}", iw, rd)
-            }
-            Instruction::Movil(il, rd) => {
-                write!(fmt, "MOVI      {},{}", il, rd)
-            }
-            Instruction::MoveReg(rs, rd) => {
-                write!(fmt, "MOVE      {},{}", rs, rd)
-            }
-            Instruction::Lmo(rs, rd) => {
-                write!(fmt, "LMO       {},{}", rs, rd)
+            Instruction::MoveFieldRegToAbsolute(rs, addr, f) => {
+                write!(fmt, "{} {},@{},{}", self.get_mnemonic(), rs, addr, f)
             }
             Instruction::Callr(offset, pc) => {
-                write!(fmt, "CALLR     {:X}h", pc.0 * 16 + offset.0 as u32 * 16 + 32)
+                write!(fmt, "{} {:X}h", self.get_mnemonic(), pc.0 * 16 + offset.0 as u32 * 16 + 32)
             }
             Instruction::Trap(n) => {
-                write!(fmt, "TRAP      {}", n)
+                write!(fmt, "{} {}", self.get_mnemonic(), n)
             }
             Instruction::Calla(addr) => {
-                write!(fmt, "CALLA     {}", addr)
+                write!(fmt, "{} {}", self.get_mnemonic(), addr)
             }
             Instruction::Jr(condition, off8, pc) => {
-                write!(fmt, "JR{}{}      {:X}h",
+                write!(fmt, "{}{}{} {:X}h", 
+                    self.get_mnemonic(),
                     condition,
                     if condition.to_string().len() == 1 { " " } else { "" },
                     (pc.0 + (off8.0 as i8) as u32) * 16 + 16)
             }
-            Instruction::Pixbltbxy => {
-                write!(fmt, "PIXBLT    B,XY")
-            }
-            Instruction::Clr(rd) => {
-                write!(fmt, "CLR       {}", rd)
-            }
             Instruction::Rets(n) => {
-                write!(fmt, "RETS      {}",
+                write!(fmt, "{} {}",
+                    self.get_mnemonic(),
                     if n.0 > 0 {
                         n.to_string()
                     } else {
@@ -1304,87 +1382,64 @@ impl fmt::Display for Instruction {
                     }
                 )
             }
-            Instruction::Fillxy => {
-                write!(fmt, "FILL      XY")
-            }
             Instruction::PixtRegToIndirectxy(rs, rd) => {
-                write!(fmt, "PIXT      {},*{},XY", rs, rd)
+                write!(fmt, "{} {},*{},XY", self.get_mnemonic(), rs, rd)
             }
             Instruction::PixtIndirectxyToReg(rs, rd) => {
-                write!(fmt, "PIXT      *{},XY,{}", rs, rd)
+                write!(fmt, "{} *{},XY,{}", self.get_mnemonic(), rs, rd)
             }
             Instruction::PixtRegToIndirect(rs, rd) => {
-                write!(fmt, "PIXT      {},*{}", rs, rd)
+                write!(fmt, "{} {},*{}", self.get_mnemonic(), rs, rd)
             }
-            Instruction::PixtIndirectxytoIndirectxy(rs, rd) => {
-                write!(fmt, "PIXT      *{},XY,*{},XY", rs, rd)
-            }
-            Instruction::Drav(rs, rd) => {
-                write!(fmt, "DRAV      {},{}", rs, rd)
+            Instruction::PixtIndirectxyToIndirectxy(rs, rd) => {
+                write!(fmt, "{} *{},XY,*{},XY", self.get_mnemonic(), rs, rd)
             }
             Instruction::Dsjs(d, rd, k, pc) => {
                 if d.0 {
-                    write!(fmt, "DSJS      {},{:X}h", rd, (pc.0-k.0 as u32)*16+16 )
+                    write!(fmt, "{} {},{:X}h", self.get_mnemonic(), rd, (pc.0-k.0 as u32)*16+16)
                 }
                 else {
-                    write!(fmt, "DSJS      {},{:X}h", rd, (pc.0+k.0 as u32)*16+16 )
+                    write!(fmt, "{} {},{:X}h", self.get_mnemonic(), rd, (pc.0+k.0 as u32)*16+16)
                 }
             }
-            Instruction::MoveFieldRegToIndirectPredec(rs, rd, Some(f)) => {
-                write!(fmt, "MOVE      {},-*{},{}", rs, rd, f) 
+            Instruction::MoveFieldRegToIndirectPredec(rs, rd, f) => {
+                write!(fmt, "{} {},-*{},{}", self.get_mnemonic(), rs, rd, f) 
             }
-            Instruction::Pixbltbl => {
-                write!(fmt, "PIXBLT    B,L")
+            Instruction::MoveFieldIndirectPostincToReg(rs, rd, f) => {
+                write!(fmt, "{} *{}+,{},{}", self.get_mnemonic(), rs, rd, f)
             }
-            Instruction::MoveFieldIndirectPostincToReg(rs, rd, Some(f)) => {
-                write!(fmt, "MOVE      *{}+,{},{}", rs, rd, f)
-            }
-            Instruction::Pixbltlxy => {
-                write!(fmt, "PIXBLT    L,XY")
-            }
-            Instruction::Pixbltxyxy => {
-                write!(fmt, "PIXBLT    XY,XY")
-            }
-            Instruction::Pixbltxyl => {
-                write!(fmt, "PIXBLT    XY,L")
-            }
-            Instruction::Pixbltll => {
-                write!(fmt, "PIXBLT    L,L")
-            }
-            Instruction::MoveFieldAbsoluteToReg(addr, rd, Some(f)) =>
+            Instruction::MoveFieldAbsoluteToReg(addr, rd, f) =>
             {
-                write!(fmt, "MOVE      @{},{},{}", addr, rd, f)
-            }
-            Instruction::Ori(il, rd) => {
-                write!(fmt, "ORI       {},{}", il, rd) 
+                write!(fmt, "{} @{},{},{}", self.get_mnemonic(), addr, rd, f)
             }
             Instruction::Andi(il, rd) => {
                 let ones_comp = IL(!il.0);
-                write!(fmt, "ANDI      {},{}", ones_comp, rd) 
-            }
-            Instruction::Cmp(rs, rd) => {
-                write!(fmt, "CMP       {},{}", rs, rd)
-            }
-            Instruction::And(rs, rd) => {
-                write!(fmt, "AND       {},{}", rs, rd) 
-            }
-            Instruction::Or(rs, rd) => {
-                write!(fmt, "OR        {},{}", rs, rd)
-            }
-            Instruction::Inc(rd) => {
-                write!(fmt, "INC       {}", rd)
-            }
-            Instruction::Subxy(rs, rd) => {
-                write!(fmt, "SUBXY     {},{}", rs, rd)
+                write!(fmt, "{}, {},{}", self.get_mnemonic(), ones_comp, rd) 
             }
             Instruction::Sllk(k, rd) => {
-                write!(fmt, "SLL       {},{}", k, rd)
+                write!(fmt, "{} {},{}", self.get_mnemonic(), k, rd)
             }
-            Instruction::Addil(il, rd) => {
-                write!(fmt, "ADDIL     {},{}", il, rd) 
+            Instruction::MovbAbsoluteToReg(addr, rd) => {
+                write!(fmt, "{} @{},{}", self.get_mnemonic(), addr, rd)
             }
-            Instruction::Filll => {
-                write!(fmt, "FILL      L")
+            Instruction::MovbRegToAbsolute(rs, addr) => {
+                write!(fmt, "{} {},@{}", self.get_mnemonic(), rs, addr)
+            }
+            Instruction::Exgpc(rd, f) => {
+                write!(fmt, "{} {},{}", self.get_mnemonic(), rd, f)
+            }
+
+            Instruction::Cmpiw(iw, rd) => {
+                write!(fmt, "{} {:08X}h,{}", self.get_mnemonic(), !iw.0, rd)
+            }
+            Instruction::Cmpil(il, rd) => {
+                write!(fmt, "{} {:08X}h,{}", self.get_mnemonic(), !il.0, rd)
+            }
+            Instruction::MovbAbsoluteToAbsolute(src_addr, dst_addr) => {
+                write!(fmt, "{} @{},@{}", self.get_mnemonic(), src_addr, dst_addr)
+            }
+            Instruction::Dw(word) => {
+                write!(fmt, "{} {:04X}h", self.get_mnemonic(), word.0)
             }
             _ => write!(fmt, "")
         }
@@ -1399,7 +1454,7 @@ pub fn disassemble_stage2(stage1_output: Vec<(usize, Instruction, Vec<u16>)>) ->
         write!(hexdump, "{:04X?}", words).unwrap();
         hexdump = hexdump.replace("[", "");
         hexdump = hexdump.replace("]", "");
-        hexdump = hexdump.replace(",", " ");
+        hexdump = hexdump.replace(",", "");
 
         writeln!(
             disassembly,

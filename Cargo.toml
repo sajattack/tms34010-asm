@@ -11,3 +11,4 @@ bitvec = "0.22"
 
 #[profile.release]
 #lto = "fat"
+#debug = true
