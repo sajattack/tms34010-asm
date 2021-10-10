@@ -7,7 +7,6 @@ mod instruction;
 mod symbol;
 
 /// Stage 1 test, byte buffer
-#[allow(unused)]
 fn test1() {
     println!(
         "{:?}",
@@ -41,7 +40,6 @@ fn test1() {
 }
 
 /// Stage 1 test, TUTOR_C program
-#[allow(unused)]
 fn test2() {
     let mut file = File::open("/home/paul/Downloads/gspa-dos/tutor_c.out").unwrap();
     file.seek(SeekFrom::Start(0x148)).unwrap();
@@ -51,7 +49,6 @@ fn test2() {
 }
 
 /// Stage 2 test, byte buffer
-#[allow(unused)]
 fn test3() {
     disasm::disassemble(
         &[
@@ -83,7 +80,6 @@ fn test3() {
 }
 
 /// Stage 2 test, TUTOR_C program
-#[allow(unused)]
 fn test4() {
     let mut file = File::open("/home/paul/Downloads/gspa-dos/tutor_c.out").unwrap();
     file.seek(SeekFrom::Start(0x148)).unwrap();
@@ -93,14 +89,12 @@ fn test4() {
 }
 
 /// Stage 2 test, NARC
-#[allow(unused)]
 fn test5() {
     let mut file = File::open("/home/paul/projects/tms34010/narc.bin").unwrap();
     let mut bytes = vec![0u8; 0xbbc];
     file.read(&mut bytes).unwrap();
     disasm::disassemble(&bytes, 0xfff6e00);
 }
-
 
 fn main() {
     // super hacky, just for quick testing

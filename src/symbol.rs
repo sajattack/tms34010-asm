@@ -104,6 +104,11 @@ impl fmt::Display for Address {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Z(pub bool);
+impl fmt::Display for Z {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(fmt, "{}", self.0 as u8)
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct Condition(pub u8);
@@ -145,6 +150,10 @@ impl fmt::Display for D {
 
 #[derive(Debug, Clone, Copy)]
 pub struct M(pub bool);
+
+// Thought about writing a Display trait for this but unfortunately it relies
+// on outside information, the rf of the rd register in the instruction this is
+// used in determines which  register letter should be shown
 #[derive(Debug, Clone, Copy)]
 pub struct RegList(pub u16);
 

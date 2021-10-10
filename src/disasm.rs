@@ -1065,17 +1065,18 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             let offset = word_iter.next().unwrap().1.load::<u16>();
                             inst_vec.push((
                                 pc + start_addr,
-                                Instruction::Jrs(Condition(cc), Offset(offset)),
+                                Instruction::Jr(
+                                    Condition(cc),
+                                    Offset(offset),
+                                    PC(pc as u32 + start_addr as u32),
+                                ),
                                 vec![word.load::<u16>(), offset],
                             ));
+
                         } else {
                             inst_vec.push((
                                 pc + start_addr,
-                                Instruction::Jr(
-                                    Condition(cc),
-                                    Offset8(lower8),
-                                    PC(pc as u32 + start_addr as u32),
-                                ),
+                                Instruction::Jrs(Condition(cc), Offset8(lower8), PC((pc + start_addr) as u32)),
                                 vec![word.load::<u16>()],
                             ));
                         }
@@ -1292,7 +1293,6 @@ impl fmt::Display for Instruction {
             Instruction::Drav(rs, rd) => {
                 write!(fmt, "{} {}, {}", self.get_mnemonic(), rs, rd)
             }
-
             Instruction::Pixbltbxy |
             Instruction::Pixbltbl |
             Instruction::Pixbltlxy |
@@ -1306,15 +1306,17 @@ impl fmt::Display for Instruction {
             Instruction::Pushst |
             Instruction::Nop |
             Instruction::Clrc |
-            Instruction::Dint => {
+            Instruction::Setc |
+            Instruction::Dint |
+            Instruction::Eint |
+            Instruction::Reti => {
                 write!(fmt, "{}", self.get_mnemonic())
             }
-
-
             Instruction::Getpc(rd) |
             Instruction::Getst(rd) |
             Instruction::Neg(rd) |
             Instruction::Negb(rd) |
+            Instruction::Not(rd) |
             Instruction::Inc(rd) |
             Instruction::Dec(rd) |
             Instruction::Abs(rd) |
@@ -1322,22 +1324,16 @@ impl fmt::Display for Instruction {
             Instruction::Clr(rd) => {
                 write!(fmt, "{} {}", self.get_mnemonic(), rd)
             }
-
-
-
             Instruction::Jump(rs) |
             Instruction::Call(rs) |
             Instruction::Putst(rs) => {
                 write!(fmt, "{} {}", self.get_mnemonic(), rs)
             }
-
             Instruction::Moviw(iw, rd) |
             Instruction::Subiw(iw, rd) |
             Instruction::Addiw(iw, rd) => {
                 write!(fmt, "{} {}, {}", self.get_mnemonic(), iw, rd)
             }
-
-
             Instruction::Addil(il, rd) |
             Instruction::Subil(il, rd) |
             Instruction::Movil(il, rd) |
@@ -1345,19 +1341,13 @@ impl fmt::Display for Instruction {
             Instruction::Ori(il, rd) => {
                 write!(fmt, "{} {}, {}", self.get_mnemonic(), il, rd) 
             }
-
             Instruction::Setf(fs, fe, f) => {
-                write!(fmt, "{} {},{},{}", self.get_mnemonic(), fs, fe, f)
+                write!(fmt, "{} {}, {}, {}", self.get_mnemonic(), fs, fe, f)
             }
-            Instruction::Movk(k, rd) => {
-                let special_k = if  k.0 == 0 { K(32) } else { *k };
-                write!(fmt, "{} {},{}", self.get_mnemonic(), special_k, rd)
-            }
-            Instruction::MoveFieldRegToAbsolute(rs, addr, f) => {
-                write!(fmt, "{} {},@{},{}", self.get_mnemonic(), rs, addr, f)
-            }
-            Instruction::Callr(offset, pc) => {
-                write!(fmt, "{} {:X}h", self.get_mnemonic(), pc.0 * 16 + offset.0 as u32 * 16 + 32)
+            Instruction::Sext(rd, f) |
+            Instruction::Zext(rd, f) |
+            Instruction::Exgf(rd, f) => {
+                write!(fmt, "{} {}, {}", self.get_mnemonic(), rd, f)
             }
             Instruction::Trap(n) => {
                 write!(fmt, "{} {}", self.get_mnemonic(), n)
@@ -1365,12 +1355,18 @@ impl fmt::Display for Instruction {
             Instruction::Calla(addr) => {
                 write!(fmt, "{} {}", self.get_mnemonic(), addr)
             }
-            Instruction::Jr(condition, off8, pc) => {
-                write!(fmt, "{}{}{} {:X}h", 
+            Instruction::Callr(offset, pc) => {
+                write!(fmt, "{} {:X}h", self.get_mnemonic(), ((pc.0 as i64 + offset.0 as i16 as i64)*16) as u32 + 32) 
+            }
+            Instruction::Jrs(condition, off8, pc) => {
+                write!(fmt, "{}{} {:X}h", 
                     self.get_mnemonic(),
                     condition,
-                    if condition.to_string().len() == 1 { " " } else { "" },
-                    (pc.0 + (off8.0 as i8) as u32) * 16 + 16)
+                    (((pc.0 as i64 + off8.0 as i8 as i64) * 16) + 16) as u32
+                )
+            }
+            Instruction::Ja(condition, address) => {
+                write!(fmt, "{}{}, {:X}h", self.get_mnemonic(), condition, address.0 as u32)
             }
             Instruction::Rets(n) => {
                 write!(fmt, "{} {}",
@@ -1382,66 +1378,206 @@ impl fmt::Display for Instruction {
                     }
                 )
             }
+            Instruction::PixtRegToIndirect(rs, rd) => {
+                write!(fmt, "{} {}, *{}", self.get_mnemonic(), rs, rd)
+            }
             Instruction::PixtRegToIndirectxy(rs, rd) => {
-                write!(fmt, "{} {},*{},XY", self.get_mnemonic(), rs, rd)
+                write!(fmt, "{} {}, *{}, XY", self.get_mnemonic(), rs, rd)
+            }
+            Instruction::PixtIndirectToReg(rs, rd) => {
+                write!(fmt, "{} *{}, {}", self.get_mnemonic(), rs, rd)
+            }
+            Instruction::PixtIndirectToIndirect(rs, rd) => {
+                write!(fmt, "{} *{}, *{}", self.get_mnemonic(), rs, rd)
             }
             Instruction::PixtIndirectxyToReg(rs, rd) => {
-                write!(fmt, "{} *{},XY,{}", self.get_mnemonic(), rs, rd)
-            }
-            Instruction::PixtRegToIndirect(rs, rd) => {
-                write!(fmt, "{} {},*{}", self.get_mnemonic(), rs, rd)
+                write!(fmt, "{} *{}, XY, {}", self.get_mnemonic(), rs, rd)
             }
             Instruction::PixtIndirectxyToIndirectxy(rs, rd) => {
-                write!(fmt, "{} *{},XY,*{},XY", self.get_mnemonic(), rs, rd)
+                write!(fmt, "{} *{} ,XY, *{}, XY", self.get_mnemonic(), rs, rd)
             }
             Instruction::Dsjs(d, rd, k, pc) => {
                 if d.0 {
-                    write!(fmt, "{} {},{:X}h", self.get_mnemonic(), rd, (pc.0-k.0 as u32)*16+16)
+                    write!(fmt, "{} {}, {:X}h", self.get_mnemonic(), rd, (pc.0-k.0 as u32)*16+16)
                 }
                 else {
-                    write!(fmt, "{} {},{:X}h", self.get_mnemonic(), rd, (pc.0+k.0 as u32)*16+16)
+                    write!(fmt, "{} {}, {:X}h", self.get_mnemonic(), rd, (pc.0+k.0 as u32)*16+16)
                 }
             }
-            Instruction::MoveFieldRegToIndirectPredec(rs, rd, f) => {
-                write!(fmt, "{} {},-*{},{}", self.get_mnemonic(), rs, rd, f) 
+            Instruction::Cmpil(il, rd) => {
+                write!(fmt, "{} {:08X}h, {}", self.get_mnemonic(), !il.0, rd)
             }
-            Instruction::MoveFieldIndirectPostincToReg(rs, rd, f) => {
-                write!(fmt, "{} *{}+,{},{}", self.get_mnemonic(), rs, rd, f)
+            Instruction::MovbRegToIndirect(rs, rd) => {
+                write!(fmt, "{} {}, *{}", self.get_mnemonic(), rs, rd)
+            }
+            Instruction::MovbIndirectToReg(rs, rd) => {
+                write!(fmt, "{} *{}, {}", self.get_mnemonic(), rs, rd)
+            }
+            Instruction::MovbIndirectToIndirect(rs, rd) => {
+                write!(fmt, "{} *{}, *{}", self.get_mnemonic(), rs, rd)
+            }
+            Instruction::MovbRegToIndirectOffset(rs, rd, offset) => {
+                write!(fmt, "{} {}, *{}({})", self.get_mnemonic(), rs, rd, offset.0 as i16)
+            }
+            Instruction::MovbIndirectOffsetToReg(rs, rd, offset) => {
+                write!(fmt, "{} *{}({}), {}", self.get_mnemonic(), rs, rd, offset.0 as i16)
+            }
+            Instruction::MovbIndirectOffsetToIndirectOffset(rs, rd, offset, offset2) => {
+                write!(fmt, "{} *{}({}), *{}({})", self.get_mnemonic(), rs, rd, offset.0 as i16, offset2.0 as i16)
+            }
+            Instruction::MovbAbsoluteToReg(addr, rd) => {
+                write!(fmt, "{} @{}, {}", self.get_mnemonic(), addr, rd)
+            }
+            Instruction::MovbRegToAbsolute(rs, addr) => {
+                write!(fmt, "{} {}, @{}", self.get_mnemonic(), rs, addr)
+            }
+            Instruction::MovbAbsoluteToAbsolute(src_addr, dst_addr) => {
+                write!(fmt, "{} @{}, @{}", self.get_mnemonic(), src_addr, dst_addr)
+            }
+            Instruction::MoveFieldRegToAbsolute(rs, addr, f) => {
+                write!(fmt, "{} {}, @{}, {}", self.get_mnemonic(), rs, addr, f)
             }
             Instruction::MoveFieldAbsoluteToReg(addr, rd, f) =>
             {
-                write!(fmt, "{} @{},{},{}", self.get_mnemonic(), addr, rd, f)
+                write!(fmt, "{} @{}, {}, {}", self.get_mnemonic(), addr, rd, f)
+            }
+            Instruction::MoveFieldAbsoluteToAbsolute(src_addr, dst_addr, f) => {
+                write!(fmt, "{} @{}, @{}, {}", self.get_mnemonic(), src_addr, dst_addr, f)
+            }
+            Instruction::MoveFieldAbsoluteToIndirectPostinc(addr, rd, f) => {
+                write!(fmt, "{} @{}, *{}+, {}", self.get_mnemonic(), addr, rd, f)
+            }
+            Instruction::MoveFieldRegToIndirect(rs, rd, f) => {
+                write!(fmt, "{} *{}, {}, {}", self.get_mnemonic(), rs, rd, f)
+            }
+            Instruction::MoveFieldRegToIndirectOffset(rs, rd, f, offset) => {
+                write!(fmt, "{} {}, *{}({:X}h), {}", self.get_mnemonic(), rs, rd, offset.0 as u16, f)
+            }
+            Instruction::MoveFieldRegToIndirectPredec(rs, rd, f) => {
+                write!(fmt, "{} {}, -*{}, {}", self.get_mnemonic(), rs, rd, f) 
+            }
+            Instruction::MoveFieldRegToIndirectPostinc(rs, rd, f) => {
+                write!(fmt, "{} {}, *{}+, {}", self.get_mnemonic(), rs, rd, f) 
+            }
+            Instruction::MoveFieldIndirectToReg(rs, rd, f) => {
+                write!(fmt, "{} *{}, {}, {}", self.get_mnemonic(), rs, rd, f)
+            }
+            Instruction::MoveFieldIndirectPredecToReg(rs, rd, f) => {
+                write!(fmt, "{} -*{}, {}, {}", self.get_mnemonic(), rs, rd, f)
+            }
+            Instruction::MoveFieldIndirectPostincToReg(rs, rd, f) => {
+                write!(fmt, "{} *{}+, {}, {}", self.get_mnemonic(), rs, rd, f)
+            }
+            Instruction::MoveFieldIndirectToIndirect(rs, rd, f) => {
+                write!(fmt, "{} *{}, *{}, {}", self.get_mnemonic(), rs, rd, f)
+            }
+            Instruction::MoveFieldIndirectToIndirectPredec(rs, rd, f) => {
+                write!(fmt, "{} -*{}, -*{}, {}", self.get_mnemonic(), rs, rd, f)
+            }
+            Instruction::MoveFieldIndirectToIndirectPostinc(rs, rd, f) => {
+                write!(fmt, "{} *{}+, *{}+, {}", self.get_mnemonic(), rs, rd, f)
+            }
+            Instruction::MoveFieldIndirectOffsetToReg(rs, rd, f, offset) => {
+                write!(fmt, "{} *{}({:X}h), {}, {}", self.get_mnemonic(), rs, offset.0 as u16, rd, f)
+            }
+            Instruction::MoveFieldIndirectOffsetToIndirectPostinc(rs, rd, f, offset) => {
+                write!(fmt, "{} *{}({:X}h), *{}+, {}", self.get_mnemonic(), rs, offset.0 as u16, rd, f)
+            }
+            Instruction::MoveFieldIndirectOffsetToIndirectOffset(rs, rd, f, offset1, offset2) => {
+                write!(fmt, "{} *{}({:X}h), *{}({:X}h), {}", self.get_mnemonic(), rs, offset1.0 as u16, rd, offset2.0 as u16, f)
             }
             Instruction::Andi(il, rd) => {
                 let ones_comp = IL(!il.0);
-                write!(fmt, "{}, {},{}", self.get_mnemonic(), ones_comp, rd) 
+                write!(fmt, "{}, {}, {}", self.get_mnemonic(), ones_comp, rd) 
             }
-            Instruction::Sllk(k, rd) => {
-                write!(fmt, "{} {},{}", self.get_mnemonic(), k, rd)
+            Instruction::Cmpiw(iw, rd) => {
+                write!(fmt, "{} {:08X}h, {}", self.get_mnemonic(), !iw.0, rd)
             }
-            Instruction::MovbAbsoluteToReg(addr, rd) => {
-                write!(fmt, "{} @{},{}", self.get_mnemonic(), addr, rd)
+            Instruction::Sllk(k, rd) |
+            Instruction::Rlk(k, rd) |
+            Instruction::Srlk(k, rd) |
+            Instruction::Srak(k, rd) |
+            Instruction::Slak(k, rd) => {
+                write!(fmt, "{} {}, {}", self.get_mnemonic(), k, rd)
             }
-            Instruction::MovbRegToAbsolute(rs, addr) => {
-                write!(fmt, "{} {},@{}", self.get_mnemonic(), rs, addr)
+            Instruction::Addk(k, rd) |
+            Instruction::Subk(k, rd) |
+            Instruction::Movk(k, rd) => {
+                let special_k = if  k.0 == 0 { K(32) } else { *k };
+                write!(fmt, "{} {}, {}", self.get_mnemonic(), special_k, rd)
             }
             Instruction::Exgpc(rd, f) => {
-                write!(fmt, "{} {},{}", self.get_mnemonic(), rd, f)
+                write!(fmt, "{} {}, {}", self.get_mnemonic(), rd, f)
             }
-
-            Instruction::Cmpiw(iw, rd) => {
-                write!(fmt, "{} {:08X}h,{}", self.get_mnemonic(), !iw.0, rd)
-            }
-            Instruction::Cmpil(il, rd) => {
-                write!(fmt, "{} {:08X}h,{}", self.get_mnemonic(), !il.0, rd)
-            }
-            Instruction::MovbAbsoluteToAbsolute(src_addr, dst_addr) => {
-                write!(fmt, "{} @{},@{}", self.get_mnemonic(), src_addr, dst_addr)
+            Instruction::Line(z) => {
+                write!(fmt, "{} {}", self.get_mnemonic(), z)
             }
             Instruction::Dw(word) => {
                 write!(fmt, "{} {:04X}h", self.get_mnemonic(), word.0)
             }
-            _ => write!(fmt, "")
+            Instruction::Jr(condition, offset, pc) => {
+                write!(fmt, "{}{} {:X}h", 
+                    self.get_mnemonic(),
+                    condition,
+                    (((pc.0 as i64 + offset.0 as i16 as i64) * 16) + 16) as u32
+                )
+
+            }
+
+            Instruction::Mmtm(rd, reglist) => {
+                let rf = rd.0.view_bits::<Lsb0>()[4];
+                let mut reg_letter = 'A';
+                if rf {
+                    reg_letter = 'B';
+                }
+                let mut reglist_str = String::new();
+                let iter = reglist.0.view_bits::<Lsb0>().iter_ones().peekable();
+                for reg_number in iter {
+                    if reg_number == 15 {
+                        write!(reglist_str, "SP").unwrap();
+                    } else {
+                        write!(reglist_str, "{}{}", reg_letter, reg_number).unwrap();
+                    }
+                    write!(reglist_str, ", ").unwrap();
+                }
+                // can't be arsed to come up with logic to avoid writing an extraneous comma
+                // fix it in post!
+                reglist_str = reglist_str[0..reglist_str.len()-2].to_string();
+                write!(fmt, "{} {}, {}", self.get_mnemonic(), rd, reglist_str)
+            }
+
+            // The type system has betrayed me!
+            // Rd and Rs are different types so MMTM and MMFM can't be in the same match block
+            // YOLO copy-pasta
+            Instruction::Mmfm(rs, reglist) => {
+                let rf = rs.0.view_bits::<Lsb0>()[4];
+                let mut reg_letter = 'A';
+                if rf {
+                    reg_letter = 'B';
+                }
+                let mut reglist_str = String::new();
+                let iter = reglist.0.view_bits::<Lsb0>().iter_ones().peekable();
+                for reg_number in iter {
+                    if reg_number == 15 {
+                        write!(reglist_str, "SP").unwrap();
+                    } else {
+                        write!(reglist_str, "{}{}", reg_letter, reg_number).unwrap();
+                    }
+                    write!(reglist_str, ", ").unwrap();
+                }
+                // can't be arsed to come up with logic to avoid writing an extraneous comma
+                // fix it in post!
+                reglist_str = reglist_str[0..reglist_str.len()-2].to_string();
+
+                write!(fmt, "{} {}, {}", self.get_mnemonic(), rs, reglist_str)
+            }
+
+            Instruction::Btstk(_, _) |
+            Instruction::Dsj(_, _) |
+            Instruction::Dsjne(_, _) |
+            Instruction::Dsjeq(_, _) => {
+                write!(fmt, "UNIMPLEMENTED INSTRUCTION")
+            }
         }
     }
 }
@@ -1461,7 +1597,7 @@ pub fn disassemble_stage2(stage1_output: Vec<(usize, Instruction, Vec<u16>)>) ->
             "{:08X}:\t{}{}{}",
             pc * 16,
             inst,
-            " ".repeat(32 - inst.to_string().len()),
+            " ".repeat(60 - inst.to_string().len()),
             hexdump
         )
         .unwrap();

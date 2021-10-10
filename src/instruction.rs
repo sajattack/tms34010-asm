@@ -131,8 +131,8 @@ pub enum Instruction {
     Dsjs(D, Rd, K, PC), // the manual calls this offset rather than K but it's in the position of K and 5 bits long
     // it's also in with other K instructions
     Ja(Condition, Address),
-    Jr(Condition, Offset8, PC),
-    Jrs(Condition, Offset),
+    Jr(Condition, Offset, PC),
+    Jrs(Condition, Offset8, PC),
     Jump(Rs),
     // Shift
     Rlk(K, Rd),
@@ -268,7 +268,7 @@ impl Instruction {
             Self::Dsjs(_, _, _, _) => "DSJS",
             Self::Ja(_, _) => "JA",
             Self::Jr(_, _, _) => "JR",
-            Self::Jrs(_, _) => "JRS",
+            Self::Jrs(_, _, _) => "JR",
             Self::Jump(_) => "JUMP",
             Self::Rlk(_, _) => "RLK",
             Self::Rl(_, _) => "RL",
