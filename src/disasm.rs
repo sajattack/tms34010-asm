@@ -1576,7 +1576,7 @@ impl fmt::Display for Instruction {
             Instruction::Dsj(_, _) |
             Instruction::Dsjne(_, _) |
             Instruction::Dsjeq(_, _) => {
-                write!(fmt, "UNIMPLEMENTED INSTRUCTION")
+                write!(fmt, "UNIMPL {:?}", self)
             }
         }
     }
