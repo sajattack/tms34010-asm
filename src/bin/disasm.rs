@@ -3,7 +3,7 @@ use std::io::prelude::*;
 use std::io::SeekFrom;
 use std::path::Path;
 
-use clap::{arg, Arg, Command};
+use clap::{Arg, Command};
 use tms34010_asm::disasm::disassemble;
 
 fn main() {
@@ -43,7 +43,7 @@ fn main() {
 
     let in_file = Path::new(matches.value_of("in_file").unwrap());
 
-    let mut offset: u64 = 0;
+    let offset: u64;
     let str_offset = matches.value_of("offset").unwrap();
     if str_offset.starts_with("0x") {
         offset = u64::from_str_radix(str_offset.strip_prefix("0x").unwrap(), 16)
@@ -54,26 +54,26 @@ fn main() {
             .expect("Offset is not a valid number");
     }
 
-    let mut start_pc: usize = 0;
+    let start_pc: usize;
     let str_start_pc = matches.value_of("start_pc").unwrap();
     if str_start_pc.starts_with("0x") {
         start_pc = usize::from_str_radix(str_start_pc.strip_prefix("0x").unwrap(), 16)
-            .expect("Offset is not a valid hexadecimal number");
+            .expect("start_pc is not a valid hexadecimal number");
     } else {
         start_pc = str_start_pc
             .parse::<usize>()
-            .expect("Offset is not a valid number");
+            .expect("start_pc is not a valid number");
     }
 
     let mut size: u64 = 0;
     if let Some(str_size) = matches.value_of("size") {
         if str_size.starts_with("0x") {
             size = u64::from_str_radix(str_size.strip_prefix("0x").unwrap(), 16)
-                .expect("Offset is not a valid hexadecimal number");
+                .expect("size is not a valid hexadecimal number");
         } else {
             size = str_size
                 .parse::<u64>()
-                .expect("Offset is not a valid number");
+                .expect("size is not a valid number");
         }
     }
 
