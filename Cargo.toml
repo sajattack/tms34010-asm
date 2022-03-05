@@ -2,13 +2,15 @@
 name = "tms34010-asm"
 version = "0.1.0"
 authors = ["Paul Sajna <hello@paulsajna.com>"]
-edition = "2018"
+edition = "2021"
+autobins = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bitvec = "0.22"
+bitvec = "1.0.0"
+clap = "3.1.5"
 
-#[profile.release]
-#lto = "fat"
-#debug = true
+[[bin]]
+path = "src/bin/disasm.rs"
+name = "tms34010-disasm"
