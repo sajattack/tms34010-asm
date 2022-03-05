@@ -20,4 +20,24 @@ or you can build and run in one operation by replacing
 
 with 
 
-`cargo run --release`
+`cargo run --release -- <args>`
+
+## Disassembler usage
+```
+TMS34010 Disassembler 0.1.0
+Paul Sajna, hello@paulsajna.com
+Disassembler for Texas Instruments TMS34010 CPU
+
+USAGE:
+    tms34010-disasm [OPTIONS] <in_file>
+
+ARGS:
+    <in_file>    File to disassemble
+
+OPTIONS:
+    -h, --help               Print help information
+    -o, --offset <offset>    Seek N bytes in in_file before starting disassembly [default: 0]
+    -p, --pc <start_pc>      Initial program counter at start of file or seek address [default: 0]
+    -s, --size <size>        Limit number of bytes to disassemble
+    -V, --version            Print version information
+```
