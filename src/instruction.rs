@@ -237,7 +237,7 @@ impl Instruction {
             Self::Pixbltll => "PIXBLT L,L",
             Self::Pixbltxyl => "PIXBLT XY,L",
             Self::Pixbltxyxy => "PIXBLT XY,XY",
-            Self::PixtRegToIndirect(_, _) 
+            Self::PixtRegToIndirect(_, _)
             | Self::PixtRegToIndirectxy(_, _)
             | Self::PixtIndirectToReg(_, _)
             | Self::PixtIndirectToIndirect(_, _)

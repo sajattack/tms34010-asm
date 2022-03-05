@@ -65,9 +65,7 @@ impl fmt::Display for FS {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         if self.0 == 0 {
             write!(fmt, "32")
-        }
-        else 
-        {
+        } else {
             write!(fmt, "{}", self.0)
         }
     }
@@ -146,7 +144,6 @@ impl fmt::Display for D {
         write!(fmt, "{}", self.0 as u8)
     }
 }
-
 
 #[derive(Debug, Clone, Copy)]
 pub struct M(pub bool);

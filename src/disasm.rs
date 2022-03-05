@@ -7,7 +7,10 @@ use crate::symbol::{
     Address, Condition, Offset, Offset8, Rd, RegList, Rs, D, F, FE, FS, IL, IW, K, N, PC, Z,
 };
 
-pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Instruction, Vec<u16>)> {
+pub fn disassemble_stage1(
+    bytebuf: &[u8],
+    start_addr: usize,
+) -> Vec<(usize, Instruction, Vec<u16>)> {
     let mut inst_vec = vec![];
     let bitslice = bytebuf.view_bits::<Lsb0>();
     let mut word_iter = bitslice.chunks(16).enumerate();
@@ -48,10 +51,7 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             9 => {
                                 inst_vec.push((
                                     pc + start_addr,
-                                    Instruction::Exgpc(
-                                        Rd((rf as u8) << 4 | rd),
-                                        F(f)
-                                    ),
+                                    Instruction::Exgpc(Rd((rf as u8) << 4 | rd), F(f)),
                                     vec![word.load::<u16>()],
                                 ));
                             }
@@ -100,7 +100,9 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                     vec![word.load::<u16>()],
                                 ));
                             }
-                            _ => { bad = true; }
+                            _ => {
+                                bad = true;
+                            }
                         }
                     }
                     0b0000001 => match subop {
@@ -173,7 +175,9 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 vec![word.load::<u16>()],
                             ));
                         }
-                        _ => { bad = true; }
+                        _ => {
+                            bad = true;
+                        }
                     },
                     0b0000010 | 0b0000011 => {
                         match subop {
@@ -284,7 +288,9 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                     ));
                                 }
                             }
-                            _ => { bad = true; }
+                            _ => {
+                                bad = true;
+                            }
                         }
                     }
                     0b0000100 => match subop {
@@ -352,7 +358,9 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 vec![word.load::<u16>(), lsb, msb],
                             ));
                         }
-                        _ => { bad = true; }
+                        _ => {
+                            bad = true;
+                        }
                     },
                     0b0000101 => match subop {
                         8 => {
@@ -439,7 +447,9 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 vec![word.load::<u16>(), iw],
                             ));
                         }
-                        _ => { bad = true; }
+                        _ => {
+                            bad = true;
+                        }
                     },
                     0b0000110 => match subop {
                         8 => {
@@ -515,7 +525,9 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 vec![word.load::<u16>()],
                             ));
                         }
-                        _ => { bad = true; }
+                        _ => {
+                            bad = true;
+                        }
                     },
                     0b0000111 => match subop {
                         8 => {
@@ -574,7 +586,9 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 vec![word.load::<u16>()],
                             ));
                         }
-                        _ => { bad = true; }
+                        _ => {
+                            bad = true;
+                        }
                     },
                     0b0001000 | 0b0001001 => {
                         if k == 1 {
@@ -661,7 +675,12 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                     0b0011100..=0b0011111 => {
                         inst_vec.push((
                             pc + start_addr,
-                            Instruction::Dsjs(D(d), Rd((rf as u8) << 4 | rd), K(k), PC(pc as u32 +start_addr as u32)),
+                            Instruction::Dsjs(
+                                D(d),
+                                Rd((rf as u8) << 4 | rd),
+                                K(k),
+                                PC(pc as u32 + start_addr as u32),
+                            ),
                             vec![word.load::<u16>()],
                         ));
                     }
@@ -1072,11 +1091,14 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 ),
                                 vec![word.load::<u16>(), offset],
                             ));
-
                         } else {
                             inst_vec.push((
                                 pc + start_addr,
-                                Instruction::Jrs(Condition(cc), Offset8(lower8), PC((pc + start_addr) as u32)),
+                                Instruction::Jrs(
+                                    Condition(cc),
+                                    Offset8(lower8),
+                                    PC((pc + start_addr) as u32),
+                                ),
                                 vec![word.load::<u16>()],
                             ));
                         }
@@ -1118,7 +1140,9 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                                 vec![word.load::<u16>()],
                             ));
                         }
-                        _ => { bad = true; }
+                        _ => {
+                            bad = true;
+                        }
                     },
                     0b1101111 => {
                         inst_vec.push((
@@ -1243,10 +1267,16 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
                             vec![word.load::<u16>()],
                         ));
                     }
-                    _ => { bad = true; }
+                    _ => {
+                        bad = true;
+                    }
                 }
                 if bad == true {
-                    inst_vec.push((pc + start_addr, Instruction::Dw(IW(word.load::<u16>())), vec![word.load::<u16>()]));
+                    inst_vec.push((
+                        pc + start_addr,
+                        Instruction::Dw(IW(word.load::<u16>())),
+                        vec![word.load::<u16>()],
+                    ));
                 }
             }
             None => {
@@ -1260,93 +1290,89 @@ pub fn disassemble_stage1(bytebuf: &[u8], start_addr: usize) -> Vec<(usize, Inst
 impl fmt::Display for Instruction {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
-            Instruction::Lmo(rs, rd) |
-            Instruction::Xor(rs, rd) |
-            Instruction::Cmp(rs, rd) |
-            Instruction::Or(rs, rd)  |
-            Instruction::Sub(rs, rd) |
-            Instruction::Subb(rs, rd) |
-            Instruction::Subxy(rs, rd) |
-            Instruction::Add(rs, rd) |
-            Instruction::Addc(rs, rd) |
-            Instruction::Addxy(rs, rd) |
-            Instruction::And(rs, rd) |
-            Instruction::Andn(rs, rd) |
-            Instruction::Btst(rs, rd) |
-            Instruction::Cmpxy(rs, rd) |
-            Instruction::Divs(rs, rd) |
-            Instruction::Divu(rs, rd) |
-            Instruction::Mods(rs, rd) |
-            Instruction::Modu(rs, rd) |
-            Instruction::Mpys(rs, rd) |
-            Instruction::Mpyu(rs, rd) |
-            Instruction::MoveReg(rs, rd) |
-            Instruction::Movx(rs, rd) |
-            Instruction::Movy(rs, rd) |
-            Instruction::Cpw(rs, rd) |
-            Instruction::Cvxyl(rs, rd) |
-            Instruction::Rl(rs, rd) |
-            Instruction::Sla(rs, rd) |
-            Instruction::Sll(rs, rd) |
-            Instruction::Sra(rs, rd) |
-            Instruction::Srl(rs, rd) |
-            Instruction::Drav(rs, rd) => {
+            Instruction::Lmo(rs, rd)
+            | Instruction::Xor(rs, rd)
+            | Instruction::Cmp(rs, rd)
+            | Instruction::Or(rs, rd)
+            | Instruction::Sub(rs, rd)
+            | Instruction::Subb(rs, rd)
+            | Instruction::Subxy(rs, rd)
+            | Instruction::Add(rs, rd)
+            | Instruction::Addc(rs, rd)
+            | Instruction::Addxy(rs, rd)
+            | Instruction::And(rs, rd)
+            | Instruction::Andn(rs, rd)
+            | Instruction::Btst(rs, rd)
+            | Instruction::Cmpxy(rs, rd)
+            | Instruction::Divs(rs, rd)
+            | Instruction::Divu(rs, rd)
+            | Instruction::Mods(rs, rd)
+            | Instruction::Modu(rs, rd)
+            | Instruction::Mpys(rs, rd)
+            | Instruction::Mpyu(rs, rd)
+            | Instruction::MoveReg(rs, rd)
+            | Instruction::Movx(rs, rd)
+            | Instruction::Movy(rs, rd)
+            | Instruction::Cpw(rs, rd)
+            | Instruction::Cvxyl(rs, rd)
+            | Instruction::Rl(rs, rd)
+            | Instruction::Sla(rs, rd)
+            | Instruction::Sll(rs, rd)
+            | Instruction::Sra(rs, rd)
+            | Instruction::Srl(rs, rd)
+            | Instruction::Drav(rs, rd) => {
                 write!(fmt, "{} {}, {}", self.get_mnemonic(), rs, rd)
             }
-            Instruction::Pixbltbxy |
-            Instruction::Pixbltbl |
-            Instruction::Pixbltlxy |
-            Instruction::Pixbltxyxy |
-            Instruction::Pixbltxyl | 
-            Instruction::Pixbltll |
-            Instruction::Fillxy |
-            Instruction::Filll |
-            Instruction::Emu |
-            Instruction::Popst |
-            Instruction::Pushst |
-            Instruction::Nop |
-            Instruction::Clrc |
-            Instruction::Setc |
-            Instruction::Dint |
-            Instruction::Eint |
-            Instruction::Reti => {
+            Instruction::Pixbltbxy
+            | Instruction::Pixbltbl
+            | Instruction::Pixbltlxy
+            | Instruction::Pixbltxyxy
+            | Instruction::Pixbltxyl
+            | Instruction::Pixbltll
+            | Instruction::Fillxy
+            | Instruction::Filll
+            | Instruction::Emu
+            | Instruction::Popst
+            | Instruction::Pushst
+            | Instruction::Nop
+            | Instruction::Clrc
+            | Instruction::Setc
+            | Instruction::Dint
+            | Instruction::Eint
+            | Instruction::Reti => {
                 write!(fmt, "{}", self.get_mnemonic())
             }
-            Instruction::Getpc(rd) |
-            Instruction::Getst(rd) |
-            Instruction::Neg(rd) |
-            Instruction::Negb(rd) |
-            Instruction::Not(rd) |
-            Instruction::Inc(rd) |
-            Instruction::Dec(rd) |
-            Instruction::Abs(rd) |
-            Instruction::Rev(rd) |
-            Instruction::Clr(rd) => {
+            Instruction::Getpc(rd)
+            | Instruction::Getst(rd)
+            | Instruction::Neg(rd)
+            | Instruction::Negb(rd)
+            | Instruction::Not(rd)
+            | Instruction::Inc(rd)
+            | Instruction::Dec(rd)
+            | Instruction::Abs(rd)
+            | Instruction::Rev(rd)
+            | Instruction::Clr(rd) => {
                 write!(fmt, "{} {}", self.get_mnemonic(), rd)
             }
-            Instruction::Jump(rs) |
-            Instruction::Call(rs) |
-            Instruction::Putst(rs) => {
+            Instruction::Jump(rs) | Instruction::Call(rs) | Instruction::Putst(rs) => {
                 write!(fmt, "{} {}", self.get_mnemonic(), rs)
             }
-            Instruction::Moviw(iw, rd) |
-            Instruction::Subiw(iw, rd) |
-            Instruction::Addiw(iw, rd) => {
+            Instruction::Moviw(iw, rd)
+            | Instruction::Subiw(iw, rd)
+            | Instruction::Addiw(iw, rd) => {
                 write!(fmt, "{} {}, {}", self.get_mnemonic(), iw, rd)
             }
-            Instruction::Addil(il, rd) |
-            Instruction::Subil(il, rd) |
-            Instruction::Movil(il, rd) |
-            Instruction::Xori(il, rd) |
-            Instruction::Ori(il, rd) => {
-                write!(fmt, "{} {}, {}", self.get_mnemonic(), il, rd) 
+            Instruction::Addil(il, rd)
+            | Instruction::Subil(il, rd)
+            | Instruction::Movil(il, rd)
+            | Instruction::Xori(il, rd)
+            | Instruction::Ori(il, rd) => {
+                write!(fmt, "{} {}, {}", self.get_mnemonic(), il, rd)
             }
             Instruction::Setf(fs, fe, f) => {
                 write!(fmt, "{} {}, {}, {}", self.get_mnemonic(), fs, fe, f)
             }
-            Instruction::Sext(rd, f) |
-            Instruction::Zext(rd, f) |
-            Instruction::Exgf(rd, f) => {
+            Instruction::Sext(rd, f) | Instruction::Zext(rd, f) | Instruction::Exgf(rd, f) => {
                 write!(fmt, "{} {}, {}", self.get_mnemonic(), rd, f)
             }
             Instruction::Trap(n) => {
@@ -1356,20 +1382,35 @@ impl fmt::Display for Instruction {
                 write!(fmt, "{} {}", self.get_mnemonic(), addr)
             }
             Instruction::Callr(offset, pc) => {
-                write!(fmt, "{} {:X}h", self.get_mnemonic(), ((pc.0 as i64 + offset.0 as i16 as i64)*16) as u32 + 32) 
+                write!(
+                    fmt,
+                    "{} {:X}h",
+                    self.get_mnemonic(),
+                    ((pc.0 as i64 + offset.0 as i16 as i64) * 16) as u32 + 32
+                )
             }
             Instruction::Jrs(condition, off8, pc) => {
-                write!(fmt, "{}{} {:X}h", 
+                write!(
+                    fmt,
+                    "{}{} {:X}h",
                     self.get_mnemonic(),
                     condition,
                     (((pc.0 as i64 + off8.0 as i8 as i64) * 16) + 16) as u32
                 )
             }
             Instruction::Ja(condition, address) => {
-                write!(fmt, "{}{}, {:X}h", self.get_mnemonic(), condition, address.0 as u32)
+                write!(
+                    fmt,
+                    "{}{}, {:X}h",
+                    self.get_mnemonic(),
+                    condition,
+                    address.0 as u32
+                )
             }
             Instruction::Rets(n) => {
-                write!(fmt, "{} {}",
+                write!(
+                    fmt,
+                    "{} {}",
                     self.get_mnemonic(),
                     if n.0 > 0 {
                         n.to_string()
@@ -1398,10 +1439,21 @@ impl fmt::Display for Instruction {
             }
             Instruction::Dsjs(d, rd, k, pc) => {
                 if d.0 {
-                    write!(fmt, "{} {}, {:X}h", self.get_mnemonic(), rd, (pc.0-k.0 as u32)*16+16)
-                }
-                else {
-                    write!(fmt, "{} {}, {:X}h", self.get_mnemonic(), rd, (pc.0+k.0 as u32)*16+16)
+                    write!(
+                        fmt,
+                        "{} {}, {:X}h",
+                        self.get_mnemonic(),
+                        rd,
+                        (pc.0 - k.0 as u32) * 16 + 16
+                    )
+                } else {
+                    write!(
+                        fmt,
+                        "{} {}, {:X}h",
+                        self.get_mnemonic(),
+                        rd,
+                        (pc.0 + k.0 as u32) * 16 + 16
+                    )
                 }
             }
             Instruction::Cmpil(il, rd) => {
@@ -1417,13 +1469,35 @@ impl fmt::Display for Instruction {
                 write!(fmt, "{} *{}, *{}", self.get_mnemonic(), rs, rd)
             }
             Instruction::MovbRegToIndirectOffset(rs, rd, offset) => {
-                write!(fmt, "{} {}, *{}({})", self.get_mnemonic(), rs, rd, offset.0 as i16)
+                write!(
+                    fmt,
+                    "{} {}, *{}({})",
+                    self.get_mnemonic(),
+                    rs,
+                    rd,
+                    offset.0 as i16
+                )
             }
             Instruction::MovbIndirectOffsetToReg(rs, rd, offset) => {
-                write!(fmt, "{} *{}({}), {}", self.get_mnemonic(), rs, rd, offset.0 as i16)
+                write!(
+                    fmt,
+                    "{} *{}({}), {}",
+                    self.get_mnemonic(),
+                    rs,
+                    rd,
+                    offset.0 as i16
+                )
             }
             Instruction::MovbIndirectOffsetToIndirectOffset(rs, rd, offset, offset2) => {
-                write!(fmt, "{} *{}({}), *{}({})", self.get_mnemonic(), rs, rd, offset.0 as i16, offset2.0 as i16)
+                write!(
+                    fmt,
+                    "{} *{}({}), *{}({})",
+                    self.get_mnemonic(),
+                    rs,
+                    rd,
+                    offset.0 as i16,
+                    offset2.0 as i16
+                )
             }
             Instruction::MovbAbsoluteToReg(addr, rd) => {
                 write!(fmt, "{} @{}, {}", self.get_mnemonic(), addr, rd)
@@ -1437,12 +1511,18 @@ impl fmt::Display for Instruction {
             Instruction::MoveFieldRegToAbsolute(rs, addr, f) => {
                 write!(fmt, "{} {}, @{}, {}", self.get_mnemonic(), rs, addr, f)
             }
-            Instruction::MoveFieldAbsoluteToReg(addr, rd, f) =>
-            {
+            Instruction::MoveFieldAbsoluteToReg(addr, rd, f) => {
                 write!(fmt, "{} @{}, {}, {}", self.get_mnemonic(), addr, rd, f)
             }
             Instruction::MoveFieldAbsoluteToAbsolute(src_addr, dst_addr, f) => {
-                write!(fmt, "{} @{}, @{}, {}", self.get_mnemonic(), src_addr, dst_addr, f)
+                write!(
+                    fmt,
+                    "{} @{}, @{}, {}",
+                    self.get_mnemonic(),
+                    src_addr,
+                    dst_addr,
+                    f
+                )
             }
             Instruction::MoveFieldAbsoluteToIndirectPostinc(addr, rd, f) => {
                 write!(fmt, "{} @{}, *{}+, {}", self.get_mnemonic(), addr, rd, f)
@@ -1451,13 +1531,21 @@ impl fmt::Display for Instruction {
                 write!(fmt, "{} *{}, {}, {}", self.get_mnemonic(), rs, rd, f)
             }
             Instruction::MoveFieldRegToIndirectOffset(rs, rd, f, offset) => {
-                write!(fmt, "{} {}, *{}({:X}h), {}", self.get_mnemonic(), rs, rd, offset.0 as u16, f)
+                write!(
+                    fmt,
+                    "{} {}, *{}({:X}h), {}",
+                    self.get_mnemonic(),
+                    rs,
+                    rd,
+                    offset.0 as u16,
+                    f
+                )
             }
             Instruction::MoveFieldRegToIndirectPredec(rs, rd, f) => {
-                write!(fmt, "{} {}, -*{}, {}", self.get_mnemonic(), rs, rd, f) 
+                write!(fmt, "{} {}, -*{}, {}", self.get_mnemonic(), rs, rd, f)
             }
             Instruction::MoveFieldRegToIndirectPostinc(rs, rd, f) => {
-                write!(fmt, "{} {}, *{}+, {}", self.get_mnemonic(), rs, rd, f) 
+                write!(fmt, "{} {}, *{}+, {}", self.get_mnemonic(), rs, rd, f)
             }
             Instruction::MoveFieldIndirectToReg(rs, rd, f) => {
                 write!(fmt, "{} *{}, {}, {}", self.get_mnemonic(), rs, rd, f)
@@ -1478,32 +1566,55 @@ impl fmt::Display for Instruction {
                 write!(fmt, "{} *{}+, *{}+, {}", self.get_mnemonic(), rs, rd, f)
             }
             Instruction::MoveFieldIndirectOffsetToReg(rs, rd, f, offset) => {
-                write!(fmt, "{} *{}({:X}h), {}, {}", self.get_mnemonic(), rs, offset.0 as u16, rd, f)
+                write!(
+                    fmt,
+                    "{} *{}({:X}h), {}, {}",
+                    self.get_mnemonic(),
+                    rs,
+                    offset.0 as u16,
+                    rd,
+                    f
+                )
             }
             Instruction::MoveFieldIndirectOffsetToIndirectPostinc(rs, rd, f, offset) => {
-                write!(fmt, "{} *{}({:X}h), *{}+, {}", self.get_mnemonic(), rs, offset.0 as u16, rd, f)
+                write!(
+                    fmt,
+                    "{} *{}({:X}h), *{}+, {}",
+                    self.get_mnemonic(),
+                    rs,
+                    offset.0 as u16,
+                    rd,
+                    f
+                )
             }
             Instruction::MoveFieldIndirectOffsetToIndirectOffset(rs, rd, f, offset1, offset2) => {
-                write!(fmt, "{} *{}({:X}h), *{}({:X}h), {}", self.get_mnemonic(), rs, offset1.0 as u16, rd, offset2.0 as u16, f)
+                write!(
+                    fmt,
+                    "{} *{}({:X}h), *{}({:X}h), {}",
+                    self.get_mnemonic(),
+                    rs,
+                    offset1.0 as u16,
+                    rd,
+                    offset2.0 as u16,
+                    f
+                )
             }
             Instruction::Andi(il, rd) => {
                 let ones_comp = IL(!il.0);
-                write!(fmt, "{}, {}, {}", self.get_mnemonic(), ones_comp, rd) 
+                write!(fmt, "{}, {}, {}", self.get_mnemonic(), ones_comp, rd)
             }
             Instruction::Cmpiw(iw, rd) => {
                 write!(fmt, "{} {:08X}h, {}", self.get_mnemonic(), !iw.0, rd)
             }
-            Instruction::Sllk(k, rd) |
-            Instruction::Rlk(k, rd) |
-            Instruction::Srlk(k, rd) |
-            Instruction::Srak(k, rd) |
-            Instruction::Slak(k, rd) => {
+            Instruction::Sllk(k, rd)
+            | Instruction::Rlk(k, rd)
+            | Instruction::Srlk(k, rd)
+            | Instruction::Srak(k, rd)
+            | Instruction::Slak(k, rd) => {
                 write!(fmt, "{} {}, {}", self.get_mnemonic(), k, rd)
             }
-            Instruction::Addk(k, rd) |
-            Instruction::Subk(k, rd) |
-            Instruction::Movk(k, rd) => {
-                let special_k = if  k.0 == 0 { K(32) } else { *k };
+            Instruction::Addk(k, rd) | Instruction::Subk(k, rd) | Instruction::Movk(k, rd) => {
+                let special_k = if k.0 == 0 { K(32) } else { *k };
                 write!(fmt, "{} {}, {}", self.get_mnemonic(), special_k, rd)
             }
             Instruction::Exgpc(rd, f) => {
@@ -1516,12 +1627,13 @@ impl fmt::Display for Instruction {
                 write!(fmt, "{} {:04X}h", self.get_mnemonic(), word.0)
             }
             Instruction::Jr(condition, offset, pc) => {
-                write!(fmt, "{}{} {:X}h", 
+                write!(
+                    fmt,
+                    "{}{} {:X}h",
                     self.get_mnemonic(),
                     condition,
                     (((pc.0 as i64 + offset.0 as i16 as i64) * 16) + 16) as u32
                 )
-
             }
 
             Instruction::Mmtm(rd, reglist) => {
@@ -1542,7 +1654,7 @@ impl fmt::Display for Instruction {
                 }
                 // can't be arsed to come up with logic to avoid writing an extraneous comma
                 // fix it in post!
-                reglist_str = reglist_str[0..reglist_str.len()-2].to_string();
+                reglist_str = reglist_str[0..reglist_str.len() - 2].to_string();
                 write!(fmt, "{} {}, {}", self.get_mnemonic(), rd, reglist_str)
             }
 
@@ -1567,15 +1679,15 @@ impl fmt::Display for Instruction {
                 }
                 // can't be arsed to come up with logic to avoid writing an extraneous comma
                 // fix it in post!
-                reglist_str = reglist_str[0..reglist_str.len()-2].to_string();
+                reglist_str = reglist_str[0..reglist_str.len() - 2].to_string();
 
                 write!(fmt, "{} {}, {}", self.get_mnemonic(), rs, reglist_str)
             }
 
-            Instruction::Btstk(_, _) |
-            Instruction::Dsj(_, _) |
-            Instruction::Dsjne(_, _) |
-            Instruction::Dsjeq(_, _) => {
+            Instruction::Btstk(_, _)
+            | Instruction::Dsj(_, _)
+            | Instruction::Dsjne(_, _)
+            | Instruction::Dsjeq(_, _) => {
                 write!(fmt, "UNIMPL {:?}", self)
             }
         }
