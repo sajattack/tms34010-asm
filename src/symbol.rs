@@ -1,6 +1,11 @@
+//! TMD34010 assembler symbols.
+//!
+//! This module uses the notation described in the User's Guide whenever possible.
+
 use core::fmt::{self, Formatter};
 
-#[derive(Debug, Clone, Copy)]
+/// Rs is the source register for an instruction.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Rs(pub u8);
 impl fmt::Display for Rs {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -14,7 +19,8 @@ impl fmt::Display for Rs {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+/// Rd is the destination register for an instruction.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Rd(pub u8);
 impl fmt::Display for Rd {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -28,7 +34,8 @@ impl fmt::Display for Rd {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+/// IW is a 16-bit immediate value.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct IW(pub u16);
 impl fmt::Display for IW {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -36,7 +43,8 @@ impl fmt::Display for IW {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+/// IL is a 32-bit immediate value.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct IL(pub u32);
 impl fmt::Display for IL {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -44,14 +52,17 @@ impl fmt::Display for IL {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+/// K is a 5-bit constant.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct K(pub u8);
 impl fmt::Display for K {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(fmt, "{}", self.0)
     }
 }
-#[derive(Debug, Clone, Copy)]
+
+/// F is the field select parameter for `MOVE` instructions.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct F(pub bool);
 impl fmt::Display for F {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -59,7 +70,8 @@ impl fmt::Display for F {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+/// FS indicates the field size.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FS(pub u8);
 impl fmt::Display for FS {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -71,7 +83,8 @@ impl fmt::Display for FS {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+/// FE indicates the field extension.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FE(pub bool);
 impl fmt::Display for FE {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -79,7 +92,11 @@ impl fmt::Display for FE {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+/// N is a general unit count.
+///
+/// It's used in the `RETS` and `TRAP` instructions, where it means "additional words to add to the
+/// stack pointer" and "trap number", respectively.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct N(pub u8);
 impl fmt::Display for N {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -87,12 +104,12 @@ impl fmt::Display for N {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Offset8(pub u8);
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Offset(pub u16);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Address(pub u32);
 impl fmt::Display for Address {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -100,7 +117,8 @@ impl fmt::Display for Address {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+/// Z is the LINE algorithm selection bit.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Z(pub bool);
 impl fmt::Display for Z {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -108,7 +126,7 @@ impl fmt::Display for Z {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Condition(pub u8);
 impl fmt::Display for Condition {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -137,7 +155,7 @@ impl fmt::Display for Condition {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct D(pub bool);
 impl fmt::Display for D {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -145,15 +163,15 @@ impl fmt::Display for D {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct M(pub bool);
 
 // Thought about writing a Display trait for this but unfortunately it relies
 // on outside information, the rf of the rd register in the instruction this is
 // used in determines which  register letter should be shown
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RegList(pub u16);
 
 // this is a bit of a hack to support instructions with offsets relative to PC
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PC(pub u32);
