@@ -54,14 +54,14 @@ fn main() {
             .expect("Offset is not a valid number");
     }
 
-    let start_pc: usize;
+    let start_pc: u32;
     let str_start_pc = matches.value_of("start_pc").unwrap();
     if str_start_pc.starts_with("0x") {
-        start_pc = usize::from_str_radix(str_start_pc.strip_prefix("0x").unwrap(), 16)
+        start_pc = u32::from_str_radix(str_start_pc.strip_prefix("0x").unwrap(), 16)
             .expect("start_pc is not a valid hexadecimal number");
     } else {
         start_pc = str_start_pc
-            .parse::<usize>()
+            .parse::<u32>()
             .expect("start_pc is not a valid number");
     }
 

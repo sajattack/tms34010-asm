@@ -1,4 +1,4 @@
-//! TMD34010 assembler symbols.
+//! TMS34010 assembler symbols.
 //!
 //! This module uses the notation described in the User's Guide whenever possible.
 
