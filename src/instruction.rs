@@ -3,7 +3,7 @@ use crate::symbol::{
     PC, Z,
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Instruction {
     // Arithmetic/Logical/Comparison
     Abs(Rd),
